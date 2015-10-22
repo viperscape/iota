@@ -1,6 +1,0 @@
-extern crate crypto;
-
-pub struct Client {
-    tid: f64,
-    
-}
