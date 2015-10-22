@@ -1,0 +1,7 @@
+[package]
+name = "iota"
+version = "0.1.0"
+authors = ["viperscape <chrisfgill@gmail.com>"]
+
+[dependencies]
+rust-crypto = "*"
