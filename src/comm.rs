@@ -7,10 +7,7 @@ use std::net::{SocketAddrV4,
 
 pub const MAX_LEN: usize = 1024;
 
-pub fn listen() {
-    let ip = Ipv4Addr::new(127, 0, 0, 1);
-    let port = 12345;
-    
+pub fn listen(ip: Ipv4Addr, port: u16) {
     if let Some(mut socket) = UdpSocket::bind(SocketAddrV4::new(ip, port)).ok() {
         socket.set_read_timeout(Some(Duration::new(1,0)));
         
@@ -29,6 +26,11 @@ pub fn listen() {
     }
     else { panic!("cannot bind socket"); }
 
+}
+
+pub fn reqres() {
+    let ip = Ipv4Addr::new(127, 0, 0, 1);
+    let port = 12345;
 }
 
 pub fn collect_msg(socket: &mut UdpSocket) -> Msg {

@@ -3,7 +3,7 @@ use rand::random;
 
 #[derive(Debug)]
 pub struct Client {
-    tid: u64, //long term (tombstone) client id, never changes
+    pub tid: u64, //long term (tombstone) client id, never changes
     et: u64, // epoch time of initial connection
     key: Vec<u8>, //shared key
 }
