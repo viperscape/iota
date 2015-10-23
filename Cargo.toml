@@ -1,6 +1,6 @@
 [package]
 name = "iota"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["viperscape <chrisfgill@gmail.com>"]
 license = "MIT"
 description = "authenticated communication"
