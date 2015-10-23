@@ -1,3 +1,5 @@
+#![feature(drain)]
+
 extern crate crypto;
 extern crate clock_ticks;
 extern crate rand;
@@ -46,6 +48,24 @@ impl Msg {
         Msg {
             data: data.to_vec(),
             mid: hmac.result().code().to_vec(),
+        }
+    }
+    
+    pub fn into_vec(mut self) -> Vec<u8> {
+        let mut v = self.mid;
+        for n in self.data.drain(..) {
+            v.push(n);
+        }
+
+        v
+    }
+
+    pub fn from_bytes(client: &Client, buf: &[u8]) -> Msg {
+        let mid = &buf[..32];
+        let data = &buf[32..];
+
+        Msg { mid: mid.to_vec(),
+              data: data.to_vec(),
         }
     }
 

@@ -14,10 +14,9 @@ fn main() {
         let client = Client::blank();
         let msg = Msg::new(&client,&b"Hello".to_vec()[..]);
         
-        socket.send_to(&msg.mid,(ip,port));
-        socket.send_to(&msg.data,(ip,port));
+        socket.send_to(&msg.into_vec()[..],(ip,port));
         
-        let msg = collect_msg(&mut socket);
+        let msg = collect_msg(&client,&mut socket);
 
         if Msg::auth(&client,&msg) {
             println!("auth {:?}",msg.data);
@@ -28,26 +27,14 @@ fn main() {
 
 }
 
-fn collect_msg(socket: &mut UdpSocket) -> Msg {
+fn collect_msg(client: &Client, socket: &mut UdpSocket) -> Msg {
     let mut buf = [0; 1024];
-    let mut mid: Vec<u8> = vec!();
-    let mut data: Vec<u8> = vec!();
     
     match socket.recv_from(&mut buf) {
         Ok((amt, src)) => {
             let r = &mut buf[..amt];
-            mid = r.to_vec();
+            Msg::from_bytes(&client,&r)
         },
         Err(_) => {panic!("whoa")},
     }
-
-    match socket.recv_from(&mut buf) {
-        Ok((amt, src)) => {
-            let r = &mut buf[..amt];
-            data = r.to_vec();
-        },
-        Err(_) => {panic!("whoa")},
-    }
-
-    Msg { mid: mid, data: data }
 }
