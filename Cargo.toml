@@ -5,6 +5,11 @@ authors = ["viperscape <chrisfgill@gmail.com>"]
 license = "MIT"
 description = "authenticated communication"
 
+[[bin]]
+name = "iota"
+path = "src/bin/main.rs"
+
+
 [dependencies]
 rust-crypto = "*"
 clock_ticks = "*"
