@@ -2,6 +2,10 @@
 name = "iota"
 version = "0.1.0"
 authors = ["viperscape <chrisfgill@gmail.com>"]
+license = "MIT"
+description = "authenticated communication"
 
 [dependencies]
 rust-crypto = "*"
+clock_ticks = "*"
+rand = "*"
