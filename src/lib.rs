@@ -7,9 +7,9 @@ extern crate rand;
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
 use crypto::hmac::Hmac;
-use crypto::mac::{Mac,MacResult};
+use crypto::mac::{Mac};
 
-use clock_ticks::precise_time_ns;
+//use clock_ticks::precise_time_ns;
 
 use rand::random;
 
@@ -24,7 +24,7 @@ pub struct Client {
 impl Client {
     pub fn blank() -> Client {
         let mut k = vec!();
-        for n in (0..64) { k.push(random::<u8>()); }
+        for _ in (0..64) { k.push(random::<u8>()); }
 
         Client {
             tid: 0,
@@ -41,7 +41,7 @@ pub struct Msg {
 
 impl Msg {
     pub fn new (client: &Client, data: &[u8]) -> Msg {
-        let dt = precise_time_ns() - client.et;
+        //let dt = precise_time_ns() - client.et;
         let mut sha = Sha256::new();
         sha.input(data);
         let mut hmac = Hmac::new(sha,&client.key[..]);
@@ -61,7 +61,7 @@ impl Msg {
         v
     }
 
-    pub fn from_bytes(client: &Client, buf: &[u8]) -> Msg {
+    pub fn from_bytes(buf: &[u8]) -> Msg {
         let mid = &buf[..32];
         let data = &buf[32..];
 

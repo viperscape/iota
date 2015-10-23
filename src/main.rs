@@ -2,7 +2,11 @@ extern crate iota;
 use iota::{Msg,Client};
 
 use std::time::Duration;
-use std::net::{SocketAddrV4, TcpStream, UdpSocket, TcpListener, Ipv4Addr};
+use std::net::{SocketAddrV4,
+               //TcpStream,
+               UdpSocket,
+               //TcpListener,
+               Ipv4Addr};
 
 fn main() {
     let ip = Ipv4Addr::new(127, 0, 0, 1);
@@ -16,24 +20,24 @@ fn main() {
         
         socket.send_to(&msg.into_vec()[..],(ip,port));
         
-        let msg = collect_msg(&client,&mut socket);
+        let msg = collect_msg(&mut socket);
 
         if Msg::auth(&client,&msg) {
             println!("auth {:?}",msg.data);
         }
-        else { println!("not auth {:?}",msg.mid) }
+        else { println!("not auth") }
 
     }
 
 }
 
-fn collect_msg(client: &Client, socket: &mut UdpSocket) -> Msg {
+fn collect_msg(socket: &mut UdpSocket) -> Msg {
     let mut buf = [0; 1024];
     
     match socket.recv_from(&mut buf) {
-        Ok((amt, src)) => {
+        Ok((amt, _src)) => {
             let r = &mut buf[..amt];
-            Msg::from_bytes(&client,&r)
+            Msg::from_bytes(&r)
         },
         Err(_) => {panic!("whoa")},
     }
