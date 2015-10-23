@@ -25,7 +25,7 @@ impl Client {
     pub fn blank() -> Client {
         let mut k = vec!();
         for n in (0..64) { k.push(random::<u8>()); }
-        
+
         Client {
             tid: 0,
             et: 0,
@@ -42,8 +42,9 @@ pub struct Msg {
 impl Msg {
     pub fn new (client: &Client, data: &[u8]) -> Msg {
         let dt = precise_time_ns() - client.et;
-        
-        let mut hmac = Hmac::new(Sha256::new(),&client.key[..]);
+        let mut sha = Sha256::new();
+        sha.input(data);
+        let mut hmac = Hmac::new(sha,&client.key[..]);
         
         Msg {
             data: data.to_vec(),
@@ -70,7 +71,9 @@ impl Msg {
     }
 
     pub fn auth (client: &Client, msg: &Msg) -> bool {
-        let mut hmac = Hmac::new(Sha256::new(),&client.key[..]);
+        let mut sha = Sha256::new();
+        sha.input(&msg.data[..]);
+        let mut hmac = Hmac::new(sha,&client.key[..]);
         &msg.mid[..] == hmac.result().code()
     }
 }
