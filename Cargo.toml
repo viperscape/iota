@@ -3,7 +3,7 @@ name = "iota"
 version = "0.1.1"
 authors = ["viperscape <chrisfgill@gmail.com>"]
 license = "MIT"
-description = "authenticated communication"
+description = "authenticated communication, with an eye towards iot"
 
 [[bin]]
 name = "iota"
