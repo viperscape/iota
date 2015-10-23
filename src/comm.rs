@@ -12,7 +12,8 @@ pub fn listen(ip: Ipv4Addr, port: u16) {
         socket.set_read_timeout(Some(Duration::new(1,0)));
         
         let client = Client::blank();
-        let msg = Msg::new(&client,&b"Hello".to_vec()[..]);
+        let data = &b"Hello".to_vec()[..];
+        let msg = Msg::new(&client,data);
         
         socket.send_to(&msg.into_vec()[..],(ip,port));
         

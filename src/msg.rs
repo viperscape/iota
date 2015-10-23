@@ -5,9 +5,9 @@ use crypto::mac::{Mac};
 
 use byteorder::{ByteOrder, BigEndian};
 
-use ::Client;
+use ::{Client,MAX_LEN};
 
-pub struct Msg {
+pub struct Msg{
     pub mid: [u8;32], //short term, message id, always changes
     pub data: Vec<u8>,
     pub tid: [u8;8], //client tombstone id
@@ -33,11 +33,14 @@ impl Msg {
     // TODO: create an into_bytes without vec alloc
     pub fn into_vec(mut self) -> Vec<u8> {
         let mut v = self.tid[..].to_vec();
+        
         let mut mid = self.mid[..].to_vec();
         for n in mid.drain(..) {
             v.push(n);
         }
-        for n in self.data.drain(..) {
+
+        let mut data = self.data[..].to_vec();
+        for n in data.drain(..) {
             v.push(n);
         }
 
@@ -47,11 +50,11 @@ impl Msg {
     pub fn from_bytes(buf: &[u8]) -> Msg {
         let mut tid = collect_u8_8(&buf[..8]);
         let mut mid = collect_u8_32(&buf[8..40]);
-        let data = &buf[40..];
+        let data = buf[40..].to_vec();
 
         Msg { tid: tid,
               mid: mid,
-              data: data.to_vec(),
+              data: data,
         }
     }
 

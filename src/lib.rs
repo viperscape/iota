@@ -11,3 +11,4 @@ pub mod client;
 
 pub use msg::{Msg};
 pub use client::Client;
+pub use comm::MAX_LEN;
