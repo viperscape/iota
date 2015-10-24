@@ -1,3 +1,18 @@
+/*
+Msg is packed as such:
+
+[42 bytes: header]
+==
+8 bytes: tombstone id
+32 bytes: message id (for auth and integ)
+1 byte: general use flag
+1 byte: reserved flag (for future revisions and versioning)
+==
+
+0-4KB: data
+
+*/
+
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
 use crypto::hmac::Hmac;
@@ -8,14 +23,15 @@ use byteorder::{ByteOrder, BigEndian};
 use ::{Client,MAX_LEN};
 
 pub struct Msg{
-    pub mid: [u8;32], //short term, message id, always changes
+    tid: [u8;8], //client tombstone id
+    mid: [u8;32],//short term, message id, always changes
+    pub cmd: u8, // single u8 designating command/route/flag
+    res: u8,     // reserved byte, using bitflags here
     pub data: Vec<u8>,
-    pub tid: [u8;8], //client tombstone id
 }
 
 impl Msg {
     pub fn new (client: &Client, data: &[u8]) -> Msg {
-        //let dt = precise_time_ns() - client.et;
         let mut sha = Sha256::new();
         sha.input(data);
         let mut hmac = Hmac::new(sha,client.key());
@@ -23,14 +39,20 @@ impl Msg {
         let mut tid = [0; 8];
         BigEndian::write_u64(&mut tid, client.tid);
         
-        Msg {
-            data: data.to_vec(),
-            mid: collect_u8_32(&hmac.result().code()[..32]),
-            tid: tid,
-        }
+        Msg { data: data.to_vec(),
+              mid: collect_u8_32(&hmac.result().code()[..32]),
+              tid: tid,
+              cmd: 0,
+              res: 0, }
     }
 
+    pub fn tid(&self) -> u64 {
+        BigEndian::read_u64(&self.tid[..])
+    }
+    
     // TODO: create an into_bytes without vec alloc
+    // Order of packing matters here!!
+    // we will expect to unpack for the same order
     pub fn into_vec(mut self) -> Vec<u8> {
         let mut v = self.tid[..].to_vec();
         
@@ -39,23 +61,27 @@ impl Msg {
             v.push(n);
         }
 
-        let mut data = self.data[..].to_vec();
-        for n in data.drain(..) {
+        v.push(self.cmd);
+        v.push(self.res);
+        
+        for n in self.data.drain(..) {
             v.push(n);
         }
 
         v
     }
 
+    /// expects buffer to be proper size
     pub fn from_bytes(buf: &[u8]) -> Msg {
         let mut tid = collect_u8_8(&buf[..8]);
         let mut mid = collect_u8_32(&buf[8..40]);
-        let data = buf[40..].to_vec();
+        let data = buf[42..].to_vec();
 
         Msg { tid: tid,
               mid: mid,
               data: data,
-        }
+              res: buf[40],
+              cmd: buf[41], }
     }
 
     pub fn auth (client: &Client, msg: &Msg) -> bool {
@@ -65,6 +91,8 @@ impl Msg {
         &msg.mid[..] == hmac.result().code()
     }
 }
+
+
 
 pub fn collect_u8_32 (d: &[u8]) -> [u8;32] {
     let mut v: [u8;32] = [0;32];
