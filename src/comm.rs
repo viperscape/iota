@@ -1,4 +1,4 @@
-use ::{Msg,Client};
+use ::{Msg,MsgBuilder,Client};
 
 use std::time::Duration;
 use std::net::{SocketAddrV4,
@@ -13,7 +13,7 @@ pub fn listen(ip: Ipv4Addr, port: u16) {
         
         let client = Client::blank();
         let data = &b"Hello"[..];
-        let msg = Msg::new(&client,data);
+        let msg = MsgBuilder::new(&client,data).build();
         
         socket.send_to(&msg.into_vec()[..],(ip,port));
 
@@ -38,17 +38,18 @@ pub fn reqres() {
     listen(ip,port);
 }
 
-/*pub fn handler(f: FnMut) {
+pub fn handler<F> (f: F)
+    where F: FnMut(u8,&[u8]) {
     let ip = Ipv4Addr::new(127, 0, 0, 1);
     let port = 12345;
     listen(ip,port);
-}*/
+}
 
-pub fn collect_msg(buf: &mut [u8;MAX_LEN], socket: &mut UdpSocket) -> Msg {
+pub fn collect_msg<'d> (buf: &'d mut [u8;MAX_LEN], socket: &mut UdpSocket) -> Msg<'d> {
     match socket.recv_from(buf) {
         Ok((amt, _src)) => {
             let r = &mut buf[..amt];
-            Msg::from_bytes(&r)
+            Msg::from_bytes(r)
         },
         Err(_) => { panic!("unable to collect message") },
     }
