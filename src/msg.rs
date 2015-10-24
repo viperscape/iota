@@ -5,8 +5,7 @@ Msg is packed as such:
 ==
 8 bytes: tombstone id
 32 bytes: message id (for auth and integ)
-1 byte: general use flag
-1 byte: reserved flag (for future revisions and versioning)
+2 bytes: reserved bytes for protocol
 ==
 
 0-4KB: data
@@ -68,31 +67,11 @@ impl<'d> MsgBuilder<'d> {
 
 // TODO: Move all of this to a packed tuple, (header,data)
 pub struct Msg<'d> {
-    /*tid: [u8;8], //client tombstone id
-    mid: [u8;32],//short term, message id, always changes
-    pub cmd: u8, // single u8 designating command/route/flag
-    res: u8,     // reserved byte, using bitflags here*/
     header: Header,
     pub data: &'d [u8],
 }
 
 impl<'d> Msg<'d> {
-    /*
-    pub fn new (client: &Client, data: &[u8]) -> Msg {
-        let mut sha = Sha256::new();
-        sha.input(data);
-        let mut hmac = Hmac::new(sha,client.key());
-
-        let mut tid = [0; 8];
-        BigEndian::write_u64(&mut tid, client.tid);
-        
-        Msg { data: data.to_vec(),
-              mid: collect_u8_32(&hmac.result().code()[..32]),
-              tid: tid,
-              cmd: 0,
-              res: 0, }
-    }*/
-
     pub fn tid(&self) -> u64 {
         BigEndian::read_u64(&self.header[..8])
     }
@@ -124,16 +103,6 @@ impl<'d> Msg<'d> {
 
         Msg { header: h,
               data: &buf[42..] }
-        
-        /*let mut tid = collect_u8_8(&buf[..8]);
-        let mut mid = collect_u8_32(&buf[8..40]);
-        let data = buf[42..].to_vec();
-
-        Msg { tid: tid,
-              mid: mid,
-              data: data,
-              res: buf[40],
-              cmd: buf[41], }*/
     }
 
     pub fn auth (client: &Client, msg: &Msg) -> bool {
