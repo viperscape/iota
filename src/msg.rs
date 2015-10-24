@@ -101,15 +101,7 @@ impl<'d> Msg<'d> {
     // Order of packing matters here!!
     // we will expect to unpack for the same order
     pub fn into_vec(mut self) -> Vec<u8> {
-        let mut v = self.header[..8].to_vec();
-        
-        let mut mid = self.header[8..40].to_vec();
-        for n in mid.drain(..) {
-            v.push(n);
-        }
-
-        v.push(self.header[40]);
-        v.push(self.header[41]);
+        let mut v = self.header[..].to_vec();
         
         for n in self.data[..].iter() {
             v.push(*n);
@@ -118,6 +110,11 @@ impl<'d> Msg<'d> {
         v
     }
 
+   /* pub fn as_bytes(&self) -> &[u8] {
+        &self.header[..],
+        &self.data[..]
+    }*/
+    
     /// expects buffer to be proper size
     pub fn from_bytes(buf: &[u8]) -> Msg {
         let mut h = Header::default();
