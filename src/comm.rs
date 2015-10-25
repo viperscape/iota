@@ -1,9 +1,10 @@
-use ::{Msg,MsgBuilder,Client};
+use ::{Msg,MsgBuilder,Client,Flags};
 
 use std::time::Duration;
 use std::net::{SocketAddrV4,
                UdpSocket,
                Ipv4Addr};
+
 
 pub const MAX_LEN: usize = 4096;
 
@@ -38,11 +39,13 @@ pub fn reqres() {
     listen(ip,port);
 }
 
-pub fn handler<F> (f: F)
-    where F: FnMut(u8,&[u8]) {
-    let ip = Ipv4Addr::new(127, 0, 0, 1);
-    let port = 12345;
-    listen(ip,port);
+/// command handler for flags
+pub fn handler (msg: &Msg) {
+    let flags = msg.flags();
+    match flags {
+        Ping => {},
+       // _ => {},
+    }
 }
 
 pub fn collect_msg<'d> (buf: &'d mut [u8;MAX_LEN], socket: &mut UdpSocket) -> Msg<'d> {

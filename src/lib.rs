@@ -4,6 +4,7 @@ extern crate crypto;
 extern crate clock_ticks;
 extern crate rand;
 extern crate byteorder;
+#[macro_use] extern crate bitflags;
 
 pub mod comm;
 pub mod msg;

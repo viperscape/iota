@@ -57,7 +57,7 @@ impl<'d> MsgBuilder<'d> {
     // ignoreme
     pub fn flag (mut self, flag: Flags) -> MsgBuilder<'d> {
         { let f = &mut self.0[41];
-          *f = *f | flag as u8; }
+          *f = *f | flag.bits(); }
         self
     }
     
@@ -80,6 +80,10 @@ impl<'d> Msg<'d> {
 
     pub fn mid(&self) -> &[u8] {
         &self.header[8..40]
+    }
+
+    pub fn flags(&self) -> &u8 {
+        &self.header[41]
     }
     
     // TODO: create an into_bytes without vec alloc
