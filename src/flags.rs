@@ -1,6 +1,7 @@
+#![allow(non_upper_case_globals)]
 
 bitflags! {
-    #[allow(non_upper_case_globals)]
+    
     flags Flags: u8 {
         const Ping = 1,
         const Req = 1 << 1,
