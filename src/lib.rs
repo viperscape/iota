@@ -8,7 +8,9 @@ extern crate byteorder;
 pub mod comm;
 pub mod msg;
 pub mod client;
+pub mod flags;
 
 pub use msg::{Msg,MsgBuilder};
 pub use client::Client;
 pub use comm::MAX_LEN;
+pub use flags::Flags;

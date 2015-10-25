@@ -19,7 +19,8 @@ use crypto::mac::{Mac};
 
 use byteorder::{ByteOrder, BigEndian};
 
-use ::{Client,MAX_LEN};
+use ::{Client,MAX_LEN,Flags};
+
 
 pub type Header = [u8;42];
 trait Default {
@@ -53,13 +54,14 @@ impl<'d> MsgBuilder<'d> {
         MsgBuilder(h,data)
     }
 
-    pub fn flag (mut self, flag: u8) -> MsgBuilder<'d> {
+    // ignoreme
+    pub fn flag (mut self, flag: Flags) -> MsgBuilder<'d> {
         { let f = &mut self.0[41];
-          *f = *f + flag; }
+          *f = *f | flag as u8; }
         self
     }
     
-    pub fn build(self) -> Msg<'d> {
+    pub fn build(mut self) -> Msg<'d> {
         Msg { header: self.0,
               data: self.1 } 
     }
@@ -74,6 +76,10 @@ pub struct Msg<'d> {
 impl<'d> Msg<'d> {
     pub fn tid(&self) -> u64 {
         BigEndian::read_u64(&self.header[..8])
+    }
+
+    pub fn mid(&self) -> &[u8] {
+        &self.header[8..40]
     }
     
     // TODO: create an into_bytes without vec alloc
