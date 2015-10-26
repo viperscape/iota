@@ -79,6 +79,21 @@ pub fn send_req<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) {
     }
 }
 
+pub fn send_pub<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) {
+    let src = SocketAddrV4::new(ip, 55265);
+    let dest = SocketAddrV4::new(ip, port);
+    if let Some(mut socket) = UdpSocket::bind(src).ok() {
+        let client = Client::blank();
+
+        let d = [1];
+        let m = MsgBuilder::new(&client,&d[..]).
+            flag(flags::Pub).route(53).build();
+        let r = socket.send_to(&m.into_vec()[..],dest);
+        println!("send pub {:?}",r);
+    }
+}
+
+
 // example req res
 pub fn reqres<H:Handler+Send+'static+Clone>(handler:H) {
     use std::thread;
@@ -89,6 +104,7 @@ pub fn reqres<H:Handler+Send+'static+Clone>(handler:H) {
     let port = 12345;
     let s = thread::spawn(move || { listen(ip,port,&mut handler) });
     send_ping(ip,port,&mut handler2);
+    send_pub(ip,port,&mut handler2);
     send_req(ip,port,&mut handler2);
 }
 

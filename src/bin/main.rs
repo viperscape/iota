@@ -18,7 +18,7 @@ impl comm::Handler for Worker {
         println!("dt: {:?}",dt);
     }
     fn publish(&mut self, tid: u64, rt: u8, data: &[u8]) {
-        self.0.insert(rt, (tid,data[0] == 0));
+        self.0.insert(rt, (tid,data[0] == 1));
     }
     fn request(&mut self, rt: u8, buf: &mut [u8]) -> usize {
         if let Some(ref n) = self.0.get(&rt) {
