@@ -7,5 +7,12 @@ use std::net::{SocketAddrV4,
                Ipv4Addr};
 
 fn main() {
-    comm::reqres();
+    comm::reqres(Worker);
+}
+
+struct Worker;
+impl comm::Handler for Worker {
+    fn ping (&self, dt: f32) {
+        println!("dt: {:?}",dt);
+    }
 }

@@ -82,8 +82,8 @@ impl<'d> Msg<'d> {
         &self.header[8..40]
     }
 
-    pub fn flags(&self) -> &u8 {
-        &self.header[41]
+    pub fn flags(&self) -> Flags {
+        Flags::from_bits_truncate(self.header[41])
     }
     
     // TODO: create an into_bytes without vec alloc

@@ -1,5 +1,9 @@
 use ::{Msg,MsgBuilder,Client,flags};
 
+use clock_ticks::precise_time_s;
+
+use byteorder::{ByteOrder, BigEndian};
+
 use std::time::Duration;
 use std::net::{SocketAddrV4,
                SocketAddr,
@@ -9,7 +13,8 @@ use std::net::{SocketAddrV4,
 
 pub const MAX_LEN: usize = 4096;
 
-pub fn listen(ip: Ipv4Addr, port: u16) {
+pub fn listen<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H) {
+    
     let src = SocketAddrV4::new(ip, port);
     if let Some(mut socket) = UdpSocket::bind(src).ok() {
         socket.set_read_timeout(Some(Duration::new(1,0)));
@@ -21,7 +26,7 @@ pub fn listen(ip: Ipv4Addr, port: u16) {
             
             if Msg::auth(&client,&msg) {
                 println!("auth {:?} {:?}",msg.data, msg.flags());
-                handler(&client,&msg,src,&mut socket);
+                manage(&client,&msg,src,&mut socket, handler);
             }
             else { println!("not auth") }
         }
@@ -50,42 +55,55 @@ pub fn send_ping(ip: Ipv4Addr, port: u16) {
 }
 
 
-pub fn reqres() {
+pub fn reqres<H:Handler+Send+'static>(handler:H) {
     use std::thread;
+    let mut handler = handler;
     
     let ip = Ipv4Addr::new(127, 0, 0, 1);
     let port = 12345;
-    let s = thread::spawn(move || { listen(ip,port) });
+    let s = thread::spawn(move || { listen(ip,port,&mut handler) });
     send_ping(ip,port);
 }
 
 /// command handler for flags
-pub fn handler (client: &Client,
-                msg: &Msg,
-                src: SocketAddr, socket: &mut UdpSocket) {
-    let flags = msg.flags();
-    let pingreq = flags::Ping|flags::Req;
-    match flags {
-        &pingreq => { // send a ping reply
-            ping_res(client,src,socket);
-        },
+pub fn manage<H:Handler>
+    (client: &Client,
+     msg: &Msg,
+     src: SocketAddr,
+     socket: &mut UdpSocket,
+     handler: &mut H) {
+        let flags = msg.flags();
+
+        if flags.contains(flags::Ping|flags::Req) { // send a ping reply
+            ping_res(client,msg.data,src,socket);
+            if flags.contains(flags::G1) { println!("guarantee unimpl"); }
+        }
+        else if flags.contains(flags::Ping|flags::Res) {
+            let d = BigEndian::read_f32(msg.data);
+            handler.ping(precise_time_s() as f32 - d);
+        }
     }
-}
 
 pub fn ping_req(client: &Client,
-                src: SocketAddrV4, socket: &mut UdpSocket) {
-    let d = [0u8];
+                src: SocketAddrV4,
+                socket: &mut UdpSocket) {
+    let mut d = &mut [0u8;4];
+    BigEndian::write_f32(d, precise_time_s() as f32);
+    
     let m = MsgBuilder::new(client,&d[..]).
         flag(flags::Ping).flag(flags::Req).build();
     let r = socket.send_to(&m.into_vec()[..],src);
+    
     println!("ping req: {:?}",r);
 }
 pub fn ping_res(client: &Client,
-                src: SocketAddr, socket: &mut UdpSocket) {
-    let d = [0u8];
-    let m = MsgBuilder::new(client,&d[..]).
+                data: &[u8],
+                src: SocketAddr,
+                socket: &mut UdpSocket) {
+    let m = MsgBuilder::new(client,&data[..]).
         flag(flags::Ping).flag(flags::Res).build();
     let r = socket.send_to(&m.into_vec()[..],src);
+    
     println!("ping res: {:?}",r);
 }
 
@@ -97,4 +115,9 @@ pub fn collect_msg<'d> (buf: &'d mut [u8;MAX_LEN], socket: &mut UdpSocket) -> (M
         },
         Err(_) => { panic!("unable to collect message") },
     }
+}
+
+
+pub trait Handler {
+    fn ping(&self, dt: f32);
 }
