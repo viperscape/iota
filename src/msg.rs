@@ -5,7 +5,7 @@ Msg is packed as such:
 ==
 8 bytes: tombstone id
 32 bytes: message id (for auth and integ)
-2 bytes: reserved bytes for protocol
+2 bytes: reserved bytes for protocol negotiation
 ==
 
 0-1.4KB: data
@@ -72,7 +72,7 @@ impl<'d> MsgBuilder<'d> {
     }
 }
 
-// TODO: Move all of this to a packed tuple, (header,data)
+
 pub struct Msg<'d> {
     header: Header,
     pub data: &'d [u8],
