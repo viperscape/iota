@@ -10,6 +10,7 @@ fn main() {
     comm::reqres(Worker);
 }
 
+#[derive(Copy,Clone)]
 struct Worker;
 impl comm::Handler for Worker {
     fn ping (&self, dt: f32) {

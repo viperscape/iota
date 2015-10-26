@@ -36,7 +36,7 @@ pub fn listen<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H) {
 
 }
 
-pub fn send_ping(ip: Ipv4Addr, port: u16) {
+pub fn send_ping<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) {
     let src = SocketAddrV4::new(ip, 55265);
     let dest = SocketAddrV4::new(ip, port);
     if let Some(mut socket) = UdpSocket::bind(src).ok() {
@@ -49,20 +49,21 @@ pub fn send_ping(ip: Ipv4Addr, port: u16) {
         let client = Client::from_msg(&msg);
         if Msg::auth(&client,&msg) {
             println!("auth {:?} {:?}",msg.data, msg.flags());
+            manage(&client,&msg,src,&mut socket,handler);
         }
         else { println!("not auth") }
     }
 }
 
 
-pub fn reqres<H:Handler+Send+'static>(handler:H) {
+pub fn reqres<H:Handler+Send+'static+Copy>(handler:H) {
     use std::thread;
     let mut handler = handler;
     
     let ip = Ipv4Addr::new(127, 0, 0, 1);
     let port = 12345;
     let s = thread::spawn(move || { listen(ip,port,&mut handler) });
-    send_ping(ip,port);
+    send_ping(ip,port,&mut handler);
 }
 
 /// command handler for flags
