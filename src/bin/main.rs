@@ -5,15 +5,26 @@ use std::time::Duration;
 use std::net::{SocketAddrV4,
                UdpSocket,
                Ipv4Addr};
-
+use std::collections::HashMap;
+    
 fn main() {
-    comm::reqres(Worker);
+    comm::reqres(Worker(HashMap::new()));
 }
 
-#[derive(Copy,Clone)]
-struct Worker;
+#[derive(Clone)]
+struct Worker(HashMap<u8, (u32,bool)>); // route, state
 impl comm::Handler for Worker {
-    fn ping (&self, dt: f32) {
+    fn ping (&mut self, dt: f32) {
         println!("dt: {:?}",dt);
     }
+    fn publish(&mut self, tid: u32, rt: u8, data: &[u8]) {
+        self.0.insert(rt, (tid,data[0] == 0));
+    }
+    fn request(&mut self, rt: u8, buf: &mut [u8]) {
+        if let Some(ref n) = self.0.get(&rt) {
+            buf[0] = (n.1 as u8);
+        }
+        else { buf[0] = 0; }
+    }
+    fn list(&self) {}
 }

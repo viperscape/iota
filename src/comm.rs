@@ -56,14 +56,15 @@ pub fn send_ping<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) {
 }
 
 
-pub fn reqres<H:Handler+Send+'static+Copy>(handler:H) {
+pub fn reqres<H:Handler+Send+'static+Clone>(handler:H) {
     use std::thread;
-    let mut handler = handler;
+    let mut handler = handler.clone();
+    let mut handler2 = handler.clone();
     
     let ip = Ipv4Addr::new(127, 0, 0, 1);
     let port = 12345;
     let s = thread::spawn(move || { listen(ip,port,&mut handler) });
-    send_ping(ip,port,&mut handler);
+    send_ping(ip,port,&mut handler2);
 }
 
 /// command handler for flags
@@ -82,6 +83,17 @@ pub fn manage<H:Handler>
         else if flags.contains(flags::Ping|flags::Res) {
             let d = BigEndian::read_f32(msg.data);
             handler.ping(precise_time_s() as f32 - d);
+        }
+        else if flags == flags::Req { //FIXME: should probably use intersect
+            let mut buf = [0u8;MAX_LEN];
+            handler.request(msg.header[42],&mut buf);
+            println!("req buf {:?}",buf[0]);
+            //let m = MsgBuilder::new(client,&data[..]).
+            //    flag(flags::Ping).flag(flags::Res).build();
+            //let r = socket.send_to(&m.into_vec()[..],src);
+        }
+        else if flags == flags::Pub {
+            handler.publish(client.tid,msg.header[42],msg.data);
         }
     }
 
@@ -120,5 +132,8 @@ pub fn collect_msg<'d> (buf: &'d mut [u8;MAX_LEN], socket: &mut UdpSocket) -> (M
 
 
 pub trait Handler {
-    fn ping(&self, dt: f32);
+    fn ping(&mut self, dt: f32);
+    fn publish(&mut self, tid: u64, rt: u8, data: &[u8]);
+    fn request(&mut self, rt: u8, buf: &mut [u8]);
+    fn list(&self);
 }
