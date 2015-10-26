@@ -20,6 +20,12 @@ All packets must be authorized and checked for integrity
 Authorization: HMAC-SHA256
 Integrity: Message data is securely hashed (SHA256) and used as seed in HMAC
 Frames meant for negotiation must include a random byte(s) in data for security
+
+Negotiation frames requiring random data:
+- Bare Request
+- Guarantee confirmations
+- Batch confirmations
+
 ---
 
 
