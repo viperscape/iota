@@ -185,9 +185,19 @@ pub trait Handler {
 
 /*
 ==  batch model ==
-batch req sent to endpoint (batch | req, route/u8)
+batch req sent to endpoint (batch | req, route/u8) // starts
 confirm: batch res sent to src (batch | res, route/u8)
-batch req sent to endpoint (batch | req, total count/u8)
-confirm: batch res sent to src (batch | res, total count/u8)
-batch req sent to endpoint (batch | req, current count/u8) + data
+batch req sent to endpoint (batch | req, total/u8)
+confirm: batch res sent to src (batch | res, total/u8)
+batch req sent to endpoint (batch | req, current/u8) + data
+
+if newer packets are found, immeditately ask for missing packet
+confirm: batch res sent to src (batch | res, needed/u8)
+
+loop {
+  batch req sent to endpoint (batch | req, route/u8) // ends
+
+  endpoint then asks for resend if needed
+  confirm: batch res sent to src (batch | res, needed/u8)
+}
 */
