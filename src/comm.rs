@@ -201,3 +201,10 @@ loop {
   confirm: batch res sent to src (batch | res, needed/u8)
 }
 */
+
+/*
+== guarantee/rendevous model ==
+G1 req sent to endpoint (g1 | req)
+G1 response to src (g1 | res, rendevous-route/u8)
+req sent to endpoint (req | route, rendevous-route)
+*/
