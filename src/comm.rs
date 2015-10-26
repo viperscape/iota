@@ -17,7 +17,7 @@ pub fn listen<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H) {
     
     let src = SocketAddrV4::new(ip, port);
     if let Some(mut socket) = UdpSocket::bind(src).ok() {
-        socket.set_read_timeout(Some(Duration::new(1,0)));
+        socket.set_read_timeout(Some(Duration::new(5,0)));
         let mut buf = [0; MAX_LEN];
         
         loop {
@@ -25,7 +25,7 @@ pub fn listen<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H) {
             let client = Client::from_msg(&msg);
             
             if Msg::auth(&client,&msg) {
-                println!("auth {:?} {:?}",msg.data, msg.flags());
+                println!("main listen auth {:?} {:?}",msg.data, msg.flags());
                 manage(&client,&msg,src,&mut socket, handler);
             }
             else { println!("not auth") }
@@ -48,14 +48,38 @@ pub fn send_ping<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) {
         let (msg,src) = collect_msg(&mut buf, &mut socket);
         let client = Client::from_msg(&msg);
         if Msg::auth(&client,&msg) {
-            println!("auth {:?} {:?}",msg.data, msg.flags());
+            println!("ping res auth {:?} {:?}",msg.data, msg.flags());
             manage(&client,&msg,src,&mut socket,handler);
         }
         else { println!("not auth") }
     }
 }
 
+pub fn send_req<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) {
+    let src = SocketAddrV4::new(ip, 55265);
+    let dest = SocketAddrV4::new(ip, port);
+    if let Some(mut socket) = UdpSocket::bind(src).ok() {
+        let client = Client::blank();
 
+        let d = [0];
+        let m = MsgBuilder::new(&client,&d[..]).
+            flag(flags::Req).route(53).build();
+        let r = socket.send_to(&m.into_vec()[..],dest);
+        println!("send req {:?}",r);
+        
+        socket.set_read_timeout(Some(Duration::new(2,0)));
+        let mut buf = [0; MAX_LEN];
+        let (msg,src) = collect_msg(&mut buf, &mut socket);
+        let client = Client::from_msg(&msg);
+        if Msg::auth(&client,&msg) {
+            println!("res auth {:?} {:?}",msg.data, msg.flags());
+            manage(&client,&msg,src,&mut socket,handler);
+        }
+        else { println!("not auth") }
+    }
+}
+
+// example req res
 pub fn reqres<H:Handler+Send+'static+Clone>(handler:H) {
     use std::thread;
     let mut handler = handler.clone();
@@ -65,6 +89,7 @@ pub fn reqres<H:Handler+Send+'static+Clone>(handler:H) {
     let port = 12345;
     let s = thread::spawn(move || { listen(ip,port,&mut handler) });
     send_ping(ip,port,&mut handler2);
+    send_req(ip,port,&mut handler2);
 }
 
 /// command handler for flags
@@ -74,7 +99,7 @@ pub fn manage<H:Handler>
      src: SocketAddr,
      socket: &mut UdpSocket,
      handler: &mut H) {
-        let flags = msg.flags();
+        let (flags,rt) = msg.flags();
 
         if flags.contains(flags::Ping|flags::Req) { // send a ping reply
             ping_res(client,msg.data,src,socket);
@@ -86,14 +111,16 @@ pub fn manage<H:Handler>
         }
         else if flags == flags::Req { //FIXME: should probably use intersect
             let mut buf = [0u8;MAX_LEN];
-            handler.request(msg.header[42],&mut buf);
+            let amt = handler.request(rt,&mut buf);
             println!("req buf {:?}",buf[0]);
-            //let m = MsgBuilder::new(client,&data[..]).
-            //    flag(flags::Ping).flag(flags::Res).build();
-            //let r = socket.send_to(&m.into_vec()[..],src);
+            
+            let m = MsgBuilder::new(client,&buf[..amt]).
+                flag(flags::Res).route(rt).build();
+            let r = socket.send_to(&m.into_vec()[..],src);
+            println!("send res {:?}",r);
         }
         else if flags == flags::Pub {
-            handler.publish(client.tid,msg.header[42],msg.data);
+            handler.publish(client.tid,rt,msg.data);
         }
     }
 
@@ -134,6 +161,6 @@ pub fn collect_msg<'d> (buf: &'d mut [u8;MAX_LEN], socket: &mut UdpSocket) -> (M
 pub trait Handler {
     fn ping(&mut self, dt: f32);
     fn publish(&mut self, tid: u64, rt: u8, data: &[u8]);
-    fn request(&mut self, rt: u8, buf: &mut [u8]);
+    fn request(&mut self, rt: u8, buf: &mut [u8]) -> usize;
     fn list(&self);
 }

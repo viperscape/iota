@@ -12,19 +12,21 @@ fn main() {
 }
 
 #[derive(Clone)]
-struct Worker(HashMap<u8, (u32,bool)>); // route, state
+struct Worker(HashMap<u8, (u64,bool)>); // route, state
 impl comm::Handler for Worker {
     fn ping (&mut self, dt: f32) {
         println!("dt: {:?}",dt);
     }
-    fn publish(&mut self, tid: u32, rt: u8, data: &[u8]) {
+    fn publish(&mut self, tid: u64, rt: u8, data: &[u8]) {
         self.0.insert(rt, (tid,data[0] == 0));
     }
-    fn request(&mut self, rt: u8, buf: &mut [u8]) {
+    fn request(&mut self, rt: u8, buf: &mut [u8]) -> usize {
         if let Some(ref n) = self.0.get(&rt) {
             buf[0] = (n.1 as u8);
+            1
         }
-        else { buf[0] = 0; }
+        else { buf[0] = 0;
+               1 }
     }
     fn list(&self) {}
 }

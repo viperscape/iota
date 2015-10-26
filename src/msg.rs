@@ -54,10 +54,15 @@ impl<'d> MsgBuilder<'d> {
         MsgBuilder(h,data)
     }
 
-    // ignoreme
     pub fn flag (mut self, flag: Flags) -> MsgBuilder<'d> {
-        { let f = &mut self.0[41];
+        { let f = &mut self.0[40];
           *f = *f | flag.bits(); }
+        self
+    }
+
+    pub fn route (mut self, rt: u8) -> MsgBuilder<'d> {
+        { let f = &mut self.0[41];
+          *f = rt; }
         self
     }
     
@@ -82,8 +87,9 @@ impl<'d> Msg<'d> {
         &self.header[8..40]
     }
 
-    pub fn flags(&self) -> Flags {
-        Flags::from_bits_truncate(self.header[41])
+    pub fn flags(&self) -> (Flags,u8) {
+        (Flags::from_bits_truncate(self.header[40]),
+         self.header[41])
     }
     
     // TODO: create an into_bytes without vec alloc
