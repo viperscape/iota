@@ -179,4 +179,15 @@ pub trait Handler {
     fn publish(&mut self, tid: u64, rt: u8, data: &[u8]);
     fn request(&mut self, rt: u8, buf: &mut [u8]) -> usize;
     fn list(&self);
+    fn batch(&mut self, tid: u64, n: u8, data: &[u8]);
+    fn new_batch(&mut self, tid: u64, rt: u8);
 }
+
+/*
+==  batch model ==
+batch req sent to endpoint (batch | req, route/u8)
+confirm: batch res sent to src (batch | res, route/u8)
+batch req sent to endpoint (batch | req, total count/u8)
+confirm: batch res sent to src (batch | res, total count/u8)
+batch req sent to endpoint (batch | req, current count/u8) + data
+*/

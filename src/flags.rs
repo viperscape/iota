@@ -11,8 +11,8 @@ bitflags! {
         const G1  = 1 << 4, // guaranteed at least once
 
         // currently reserved bits for future extension
-        const R1 = 1 << 5, // probably will be used for batching
-        const R2 = 1 << 6,
+        const Bat = 1 << 5, // batching
+        const Alt = 1 << 6, // supply alternate encodings
         const R3 = 1 << 7,
     }
 }
