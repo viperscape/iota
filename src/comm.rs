@@ -1,6 +1,7 @@
 use ::{Msg,MsgBuilder,Client,flags};
 
 use clock_ticks::precise_time_s;
+use rand::random;
 
 use byteorder::{ByteOrder, BigEndian};
 
@@ -61,7 +62,7 @@ pub fn send_req<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) {
     if let Some(mut socket) = UdpSocket::bind(src).ok() {
         let client = Client::blank();
 
-        let d = [0];
+        let d = [random::<u8>()];
         let m = MsgBuilder::new(&client,&d[..]).
             flag(flags::Req).route(53).build();
         let r = socket.send_to(&m.into_vec()[..],dest);
@@ -179,8 +180,8 @@ pub trait Handler {
     fn publish(&mut self, tid: u64, rt: u8, data: &[u8]);
     fn request(&mut self, rt: u8, buf: &mut [u8]) -> usize;
     fn list(&self);
-    fn batch(&mut self, tid: u64, n: u8, data: &[u8]);
-    fn new_batch(&mut self, tid: u64, rt: u8);
+    //fn batch(&mut self, tid: u64, n: u8, data: &[u8]);
+    //fn new_batch(&mut self, tid: u64, rt: u8);
 }
 
 /*
