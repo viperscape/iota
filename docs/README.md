@@ -9,7 +9,7 @@ Msg is packed as such:
 ==
 8 bytes: tombstone id
 32 bytes: message id (for auth and integ)
-2 bytes: reserved bytes for protocol
+2 bytes: reserved bytes for protocol negotiation
 ==
 
 0-1.4KB: data (arbitrary max size, theoretical is natural udp limit - header)
@@ -19,7 +19,7 @@ Msg is packed as such:
 All packets must be authorized and checked for integrity
 Authorization: HMAC-SHA256
 Integrity: Message data is securely hashed (SHA256) and used as seed in HMAC
-
+Frames meant for negotiation must include a random byte(s) in data for security
 ---
 
 
