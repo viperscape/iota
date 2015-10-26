@@ -8,7 +8,7 @@ Msg is packed as such:
 2 bytes: reserved bytes for protocol
 ==
 
-0-4KB: data
+0-1.4KB: data
 
 */
 

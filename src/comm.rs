@@ -11,7 +11,7 @@ use std::net::{SocketAddrV4,
                Ipv4Addr, };
 
 
-pub const MAX_LEN: usize = 4096;
+pub const MAX_LEN: usize = 1400;
 
 pub fn listen<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H) {
     

@@ -12,7 +12,7 @@ Msg is packed as such:
 2 bytes: reserved bytes for protocol
 ==
 
-0-4KB: data (arbitrary max size, theoretical is natural udp limit - header)
+0-1.4KB: data (arbitrary max size, theoretical is natural udp limit - header)
 
 ```
 
