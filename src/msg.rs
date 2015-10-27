@@ -188,4 +188,28 @@ mod tests {
         let m = Msg::from_bytes(&t[..]);
         assert!(Msg::auth(&client,&m));
     }
+
+    #[test]
+    fn tamper_check () {
+        let client = Client::blank();
+        let m = MsgBuilder::new(&client,&b"hi"[..])
+            .flag(flags::Pub).route(53).build();
+        let mut t = m.into_vec();
+
+        // test flag tampering
+        t[40] = flags::Req.bits(); //change pub to req
+        {let m = Msg::from_bytes(&t[..]);
+         assert!(!Msg::auth(&client,&m));}
+
+        // test route tampering
+        t[40] = flags::Pub.bits(); // change back flag
+        t[41] = 52; //change route destination
+        {let m = Msg::from_bytes(&t[..]);
+         assert!(!Msg::auth(&client,&m));}
+
+        // verify basic auth works
+        t[41] = 53; //change back route
+        {let m = Msg::from_bytes(&t[..]);
+         assert!(Msg::auth(&client,&m));}
+    }
 }
