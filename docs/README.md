@@ -18,7 +18,14 @@ Msg is packed as such:
 
 All packets must be authorized and checked for integrity
 Authorization: HMAC-SHA256
-Integrity: Message data is securely hashed (SHA256) and used as seed in HMAC
+
+Integrity variables (in order) [bytes 40-max_len]:
+- Flags
+- Route
+- Message data
+
+Integrity variables are securely hashed (SHA256) and used as seed in HMAC
+
 Frames meant for negotiation must include a random byte(s) in data for security
 
 Negotiation frames requiring random data:
@@ -31,9 +38,10 @@ Negotiation frames requiring random data:
 
 Flags defined (flags.rs):
 
-Flags are used in 41st byte
+Flags are used in 40th byte
 
 ```
+None = 0, // not currently used (perhaps an Info request)
 Ping = 1,
 Req = 1 << 1, // request
 Res = 1 << 2, // response
@@ -41,8 +49,8 @@ Pub = 1 << 3, // publishing to an endpoint
 G1  = 1 << 4, // guaranteed at least once
 
 // currently reserved bits for future extension
-R1 = 1 << 5, // probably will be used for batching
-R2 = 1 << 6,
+Bat = 1 << 5, // used for batching
+Alt = 1 << 6, // alternate encoding specified
 R3 = 1 << 7,
 
 ```
@@ -60,7 +68,7 @@ R3 = 1 << 7,
 3 reserved bits: Currently only one might be in use for batching (more on this later)
 
 
-42nd byte provides value for corresponding flag
+41st byte provides value for corresponding flag, called 'route'
 
 
 example publish to route 53:
