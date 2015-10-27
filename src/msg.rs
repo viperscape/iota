@@ -173,4 +173,19 @@ mod tests {
     use crypto::hmac::Hmac;
     use crypto::mac::{Mac};
 
+    use ::{Msg,MsgBuilder,Client,flags};
+    
+    #[test]
+    fn auth_ok () {
+        let client = Client::blank();
+        let m = MsgBuilder::new(&client,&b"hi"[..])
+            .flag(flags::Pub).route(53).build();
+        let t = m.into_vec();
+        
+        // t would be sent across wire as &t[..]
+        // on recv we would recreate a message from bytes recv
+        
+        let m = Msg::from_bytes(&t[..]);
+        assert!(Msg::auth(&client,&m));
+    }
 }
