@@ -165,3 +165,12 @@ pub fn collect_u8_8 (d: &[u8]) -> [u8;8] {
 
     v
 }
+
+mod tests {
+    use rand::random;
+    use crypto::digest::Digest;
+    use crypto::sha2::Sha256;
+    use crypto::hmac::Hmac;
+    use crypto::mac::{Mac};
+
+}
