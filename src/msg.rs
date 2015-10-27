@@ -174,6 +174,31 @@ mod tests {
     use crypto::mac::{Mac};
 
     use ::{Msg,MsgBuilder,Client,flags};
+
+    #[test]
+    fn conform() {
+        let key = [random::<u8>();32];
+        let d = [random::<u8>();1400];
+        let p = [flags::Pub.bits(),125];
+        
+        let mut dp = [0;1402];
+        dp[0] = flags::Pub.bits();
+        dp[1] = 125;
+        for (i,n) in d[..].iter().enumerate() {
+            dp[i+2] = *n;
+        }
+        
+        let mut sha = Sha256::new();
+        sha.input(&p[..]);
+        sha.input(&d[..]);
+        let mut hmac = Hmac::new(sha,&key[..]).result();
+
+        let mut sha = Sha256::new();
+        sha.input(&dp[..]);
+        let mut hmac2 = Hmac::new(sha,&key[..]).result();
+
+        assert_eq!(hmac.code(),hmac2.code());
+    }
     
     #[test]
     fn auth_ok () {
