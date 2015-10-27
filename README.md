@@ -20,8 +20,9 @@ loop {
 ```
 ---
 
-#### guarantee/rendevous model ####
-  
-- G1 req sent to endpoint (g1 | req)
-- G1 response to src (g1 | res, rendevous-route/u8)
-- req sent to endpoint (req | route, rendevous-route)
+#### guarantee ####
+
+- src md5 hash of data to be guaranteed
+- G1 req with route sent to endpoint (g1 | req | rt, route/u8) + data
+- G1 response to src (g1 | res) + md5 hash of data recv
+- confirm: src checks hash matches
