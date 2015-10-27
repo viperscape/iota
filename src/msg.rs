@@ -32,38 +32,46 @@ impl Default for Header {
     }
 }
 
-pub struct MsgBuilder<'d>(Header,&'d [u8]);
-impl<'d> MsgBuilder<'d> {
-    pub fn new(client: &Client, data: &'d [u8]) -> MsgBuilder<'d> {
+pub struct MsgBuilder<'d,'c>(Header,&'d [u8],&'c Client);
+impl<'d,'c> MsgBuilder<'d,'c> {
+    pub fn new(client: &'c Client, data: &'d [u8]) -> MsgBuilder<'d,'c> {
         let mut h = Header::default();
 
         {
             let tid = &mut h[..8];
             BigEndian::write_u64(tid, client.tid);
         }
-        {
-            let mid = &mut h[8..40];
-            let mut sha = Sha256::new();
-            sha.input(data);
-            let mut hmac = Hmac::new(sha,client.key());
-            for (i,n) in hmac.result().code()[..32].iter().enumerate() {
-                mid[i] = *n;
-            }
-        }
 
-        MsgBuilder(h,data)
+        let mut mb = MsgBuilder(h,data, client);
+        mb.gen_mid();
+
+        mb
     }
 
-    pub fn flag (mut self, flag: Flags) -> MsgBuilder<'d> {
+    pub fn flag (mut self, flag: Flags) -> MsgBuilder<'d,'c> {
         { let f = &mut self.0[40];
           *f = *f | flag.bits(); }
+
+        self.gen_mid();
+        
         self
     }
 
-    pub fn route (mut self, rt: u8) -> MsgBuilder<'d> {
+    pub fn route (mut self, rt: u8) -> MsgBuilder<'d,'c> {
         { let f = &mut self.0[41];
           *f = rt; }
+        
+        self.gen_mid();
+        
         self
+    }
+
+    fn gen_mid(&mut self) {
+        let gmid = gen_mid(self.2,&self.0[40..42],&self.1[..]);
+        let mid = &mut self.0[8..40]; 
+        for (i,n) in gmid[..32].iter().enumerate() {
+            mid[i] = *n;
+        }
     }
     
     pub fn build(mut self) -> Msg<'d> {
@@ -122,14 +130,23 @@ impl<'d> Msg<'d> {
     }
 
     pub fn auth (client: &Client, msg: &Msg) -> bool {
-        let mut sha = Sha256::new();
-        sha.input(&msg.data[..]);
-        let mut hmac = Hmac::new(sha,client.key());
-        &msg.header[8..40] == hmac.result().code()
+        let mid = gen_mid(client,&msg.header[40..42],&msg.data[..]);
+        &msg.header[8..40] == &mid[..]
     }
 }
 
+pub fn gen_mid (client: &Client, h: &[u8], d: &[u8]) -> [u8;32] {
+    let mut sha = Sha256::new();
+    sha.input(&h[..]);
+    sha.input(&d[..]);
+    let mut hmac = Hmac::new(sha,client.key());
+    let mut mid = [0u8;32];
+    for (i,n) in hmac.result().code()[..32].iter().enumerate() {
+        mid[i] = *n;
+    }
 
+    mid
+}
 
 pub fn collect_u8_32 (d: &[u8]) -> [u8;32] {
     let mut v: [u8;32] = [0;32];
