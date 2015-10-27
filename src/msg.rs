@@ -200,15 +200,21 @@ mod tests {
         t[40] = flags::Req.bits(); //change pub to req
         {let m = Msg::from_bytes(&t[..]);
          assert!(!Msg::auth(&client,&m));}
+        t[40] = flags::Pub.bits(); // change back flag
 
         // test route tampering
-        t[40] = flags::Pub.bits(); // change back flag
         t[41] = 52; //change route destination
         {let m = Msg::from_bytes(&t[..]);
          assert!(!Msg::auth(&client,&m));}
-
-        // verify basic auth works
         t[41] = 53; //change back route
+
+        // verify data tampering
+        t[42] = 105; // change data to "ii" instead of "hi"
+        {let m = Msg::from_bytes(&t[..]);
+         assert!(!Msg::auth(&client,&m));}
+        t[42] = 104; // change back data
+        
+        // verify basic auth works
         {let m = Msg::from_bytes(&t[..]);
          assert!(Msg::auth(&client,&m));}
     }
