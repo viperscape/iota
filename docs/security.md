@@ -17,8 +17,11 @@ negotiation is now complete and a session id has been agreed upon
 
 #### unique hmac ####
 
-without sessions each iota packet's message-digest would be identical and cause alarm for an attacker could resend a packet untouched and trigger action on the recv end, therefore we need to make each message digest unique amongst eachother, even if the packets are otherwise identical.
+between sessions and time comparison, an attacker will not be able to resend a packet untouched to trigger action on the recv end. for this to work we need to make each message digest unique amongst eachother, even if the packets are otherwise identical.
 
 hmac must be created as such:
-1. create sha from an always random u32, flags, route, and finally data
+1. create sha from a precise time ms/u32, flags, route, and finally data
 2. hmac sha with session id as key
+3. precise time to state on src
+4. sha is rebuilt on dest for auth/integ checks
+5. delta time comparison less than threshold

@@ -6,6 +6,7 @@ Msg is packed as such:
 8 bytes: tombstone id
 32 bytes: message id (for auth and integ)
 2 bytes: reserved bytes for protocol negotiation
+4 bytes: precise time in ms in BE u32
 ==
 
 0-1.4KB: data
@@ -17,18 +18,20 @@ use crypto::sha2::Sha256;
 use crypto::hmac::Hmac;
 use crypto::mac::{Mac};
 
+use clock_ticks::{precise_time_ms};
+
 use byteorder::{ByteOrder, BigEndian};
 
 use ::{Client,MAX_LEN,Flags};
 
 
-pub type Header = [u8;42];
+pub type Header = [u8;46];
 trait Default {
     fn default() -> Self;
 }
 impl Default for Header {
     fn default() -> Header {
-        [0;42]
+        [0;46]
     }
 }
 
@@ -40,6 +43,11 @@ impl<'d,'c> MsgBuilder<'d,'c> {
         {
             let tid = &mut h[..8];
             BigEndian::write_u64(tid, client.tid);
+        }
+
+        {
+            let pt = &mut h[42..46];
+            BigEndian::write_u32(pt, precise_time_ms as u32);
         }
 
         let mut mb = MsgBuilder(h,data, client);
@@ -67,7 +75,8 @@ impl<'d,'c> MsgBuilder<'d,'c> {
     }
 
     fn gen_mid(&mut self) {
-        let gmid = gen_mid(self.2,&self.0[40..42],&self.1[..]);
+        //println!("{:?}",&self.0[42..46]);
+        let gmid = gen_mid(self.2,&self.0[40..46],&self.1[..]);
         let mid = &mut self.0[8..40]; 
         for (i,n) in gmid[..32].iter().enumerate() {
             mid[i] = *n;
@@ -121,17 +130,24 @@ impl<'d> Msg<'d> {
     /// expects buffer to be proper size
     pub fn from_bytes(buf: &[u8]) -> Msg {
         let mut h = Header::default();
-        for (i,n) in buf[..42].iter().enumerate() {
+        for (i,n) in buf[..46].iter().enumerate() {
             h[i] = *n;
         }
 
         Msg { header: h,
-              data: &buf[42..] }
+              data: &buf[46..] }
     }
 
     pub fn auth (client: &Client, msg: &Msg) -> bool {
-        let mid = gen_mid(client,&msg.header[40..42],&msg.data[..]);
-        &msg.header[8..40] == &mid[..]
+        let mid = gen_mid(client,&msg.header[40..46],&msg.data[..]);
+        //&msg.header[8..40] == &mid[..]
+        
+        // prevent timing attack with full iteration of values
+        let mut same = true;
+        for (i,n) in msg.header[8..40].iter().enumerate() {
+            same = (n == &mid[i]);
+        }
+        same
     }
 }
 
@@ -180,6 +196,8 @@ mod tests {
     use crypto::hmac::Hmac;
     use crypto::mac::{Mac};
 
+    use clock_ticks::{precise_time_ns,precise_time_ms};
+
     use ::{Msg,MsgBuilder,Client,flags};
 
     #[test]
@@ -226,8 +244,13 @@ mod tests {
         let client = Client::blank();
         let m = MsgBuilder::new(&client,&b"hi"[..])
             .flag(flags::Pub).route(53).build();
-        let mut t = m.into_vec();
+        let mut pt = m.into_vec();
 
+        // auth init msg
+        {let m = Msg::from_bytes(&pt[..]);
+         assert!(!Msg::auth(&client,&m));}
+        let t = pt.clone(); // we'll test against this later
+        
         // test flag tampering
         t[40] = flags::Req.bits(); //change pub to req
         {let m = Msg::from_bytes(&t[..]);
@@ -241,14 +264,17 @@ mod tests {
         t[41] = 53; //change back route
 
         // verify data tampering
-        t[42] = 105; // change data to "ii" instead of "hi"
+        t[46] = 105; // change data to "ii" instead of "hi"
         {let m = Msg::from_bytes(&t[..]);
          assert!(!Msg::auth(&client,&m));}
-        t[42] = 104; // change back data
+        t[46] = 104; // change back data
         
         // verify basic auth works
         {let m = Msg::from_bytes(&t[..]);
          assert!(Msg::auth(&client,&m));}
+
+        // compare original and last
+        assert_eq!(t,tt);
     }
 
     #[bench]
