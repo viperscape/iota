@@ -10,7 +10,7 @@ Msg is packed as such:
 
 0-1.4KB: data
 
-*/
+ */
 
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
@@ -167,9 +167,14 @@ pub fn collect_u8_8 (d: &[u8]) -> [u8;8] {
 }
 
 mod tests {
+    extern crate test;
+    use self::test::Bencher;
+    
     use rand::random;
     use crypto::digest::Digest;
     use crypto::sha2::Sha256;
+    use crypto::sha1::Sha1;
+    use crypto::md5::Md5;
     use crypto::hmac::Hmac;
     use crypto::mac::{Mac};
 
@@ -242,5 +247,41 @@ mod tests {
         // verify basic auth works
         {let m = Msg::from_bytes(&t[..]);
          assert!(Msg::auth(&client,&m));}
+    }
+
+    #[bench]
+    fn md5(b:&mut Bencher) {
+        let key = [random::<u8>();32];
+        let d = [random::<u8>();1400];
+        
+        b.iter(||{
+            let mut sha = Md5::new();
+            sha.input(&d[..]);
+            let mut hmac = Hmac::new(sha,&key[..]).result();
+        });
+    }
+
+    #[bench]
+    fn sha256(b:&mut Bencher) {
+        let key = [random::<u8>();32];
+        let d = [random::<u8>();1400];
+        
+        b.iter(||{
+            let mut sha = Sha256::new();
+            sha.input(&d[..]);
+            let mut hmac = Hmac::new(sha,&key[..]).result();
+        });
+    }
+
+    #[bench]
+    fn sha1(b:&mut Bencher) {
+        let key = [random::<u8>();32];
+        let d = [random::<u8>();1400];
+        
+        b.iter(||{
+            let mut sha = Sha1::new();
+            sha.input(&d[..]);
+            let mut hmac = Hmac::new(sha,&key[..]).result();
+        });
     }
 }

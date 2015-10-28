@@ -1,4 +1,5 @@
 #![feature(drain)]
+#![feature(test)] 
 
 extern crate crypto;
 extern crate clock_ticks;
