@@ -138,7 +138,7 @@ impl<'d> Msg<'d> {
               data: &buf[46..] }
     }
 
-    pub fn auth (client: &Client, msg: &Msg) -> bool {
+    pub fn auth (client: &Client, msg: &Msg, max_dt: u16) -> bool {
         let mid = gen_mid(client,&msg.header[40..46],&msg.data[..]);
         //&msg.header[8..40] == &mid[..]
         
@@ -147,7 +147,8 @@ impl<'d> Msg<'d> {
         for (i,n) in msg.header[8..40].iter().enumerate() {
             same = (n == &mid[i]);
         }
-        same
+
+        if 
     }
 }
 
@@ -244,12 +245,12 @@ mod tests {
         let client = Client::blank();
         let m = MsgBuilder::new(&client,&b"hi"[..])
             .flag(flags::Pub).route(53).build();
-        let mut pt = m.into_vec();
+        let pt = m.into_vec();
 
         // auth init msg
         {let m = Msg::from_bytes(&pt[..]);
-         assert!(!Msg::auth(&client,&m));}
-        let t = pt.clone(); // we'll test against this later
+         assert!(Msg::auth(&client,&m));}
+        let mut t = pt.clone(); // we'll test against this later
         
         // test flag tampering
         t[40] = flags::Req.bits(); //change pub to req
@@ -273,8 +274,8 @@ mod tests {
         {let m = Msg::from_bytes(&t[..]);
          assert!(Msg::auth(&client,&m));}
 
-        // compare original and last
-        assert_eq!(t,tt);
+        // compare original and latest
+        assert_eq!(pt,t);
     }
 
     #[bench]
