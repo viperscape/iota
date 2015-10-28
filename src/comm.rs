@@ -25,7 +25,7 @@ pub fn listen<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H) {
             let (msg,src) = collect_msg(&mut buf, &mut socket);
             let client = Client::from_msg(&msg);
             
-            if Msg::auth(&client,&msg) {
+            if Msg::auth(&client,&msg, 150) {
                 println!("main listen auth {:?} {:?}",msg.data, msg.flags());
                 manage(&client,&msg,src,&mut socket, handler);
             }
@@ -48,7 +48,7 @@ pub fn send_ping<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) {
         let mut buf = [0; MAX_LEN];
         let (msg,src) = collect_msg(&mut buf, &mut socket);
         let client = Client::from_msg(&msg);
-        if Msg::auth(&client,&msg) {
+        if Msg::auth(&client,&msg, 150) {
             println!("ping res auth {:?} {:?}",msg.data, msg.flags());
             manage(&client,&msg,src,&mut socket,handler);
         }
@@ -72,7 +72,7 @@ pub fn send_req<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) {
         let mut buf = [0; MAX_LEN];
         let (msg,src) = collect_msg(&mut buf, &mut socket);
         let client = Client::from_msg(&msg);
-        if Msg::auth(&client,&msg) {
+        if Msg::auth(&client,&msg, 150) {
             println!("res auth {:?} {:?}",msg.data, msg.flags());
             manage(&client,&msg,src,&mut socket,handler);
         }

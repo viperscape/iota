@@ -108,6 +108,10 @@ impl<'d> Msg<'d> {
         (Flags::from_bits_truncate(self.header[40]),
          self.header[41])
     }
+
+    pub fn time(&self) -> u32 {
+        BigEndian::read_u32(&self.header[42..46])
+    }
     
     // TODO: create an into_bytes without vec alloc
     // Order of packing matters here!!
@@ -148,7 +152,10 @@ impl<'d> Msg<'d> {
             same = (n == &mid[i]);
         }
 
-        if 
+        if (precise_time_ms as u32 - msg.time()) < max_dt as u32 {
+            same
+        }
+        else { false }
     }
 }
 
@@ -237,7 +244,7 @@ mod tests {
         // on recv we would recreate a message from bytes recv
         
         let m = Msg::from_bytes(&t[..]);
-        assert!(Msg::auth(&client,&m));
+        assert!(Msg::auth(&client,&m, 150));
     }
 
     #[test]
@@ -249,30 +256,30 @@ mod tests {
 
         // auth init msg
         {let m = Msg::from_bytes(&pt[..]);
-         assert!(Msg::auth(&client,&m));}
+         assert!(Msg::auth(&client,&m, 150));}
         let mut t = pt.clone(); // we'll test against this later
         
         // test flag tampering
         t[40] = flags::Req.bits(); //change pub to req
         {let m = Msg::from_bytes(&t[..]);
-         assert!(!Msg::auth(&client,&m));}
+         assert!(!Msg::auth(&client,&m, 150));}
         t[40] = flags::Pub.bits(); // change back flag
 
         // test route tampering
         t[41] = 52; //change route destination
         {let m = Msg::from_bytes(&t[..]);
-         assert!(!Msg::auth(&client,&m));}
+         assert!(!Msg::auth(&client,&m, 150));}
         t[41] = 53; //change back route
 
         // verify data tampering
         t[46] = 105; // change data to "ii" instead of "hi"
         {let m = Msg::from_bytes(&t[..]);
-         assert!(!Msg::auth(&client,&m));}
+         assert!(!Msg::auth(&client,&m, 150));}
         t[46] = 104; // change back data
         
         // verify basic auth works
         {let m = Msg::from_bytes(&t[..]);
-         assert!(Msg::auth(&client,&m));}
+         assert!(Msg::auth(&client,&m, 150));}
 
         // compare original and latest
         assert_eq!(pt,t);
