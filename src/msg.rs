@@ -175,6 +175,8 @@ mod tests {
     use crypto::sha2::Sha256;
     use crypto::sha1::Sha1;
     use crypto::md5::Md5;
+    use crypto::ghash::Ghash;
+    
     use crypto::hmac::Hmac;
     use crypto::mac::{Mac};
 
@@ -282,6 +284,18 @@ mod tests {
             let mut sha = Sha1::new();
             sha.input(&d[..]);
             let mut hmac = Hmac::new(sha,&key[..]).result();
+        });
+    }
+
+    #[bench]
+    fn ghash(b:&mut Bencher) {
+        let key = [random::<u8>();16];
+        let d = [random::<u8>();1400];
+        
+        b.iter(||{
+            let mut ha = Ghash::new(&key);
+            ha.input(&d[..]);
+            let mut gmac = ha.result();
         });
     }
 }
