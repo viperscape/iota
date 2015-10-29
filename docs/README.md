@@ -5,11 +5,11 @@ See header in msg.rs for layout
 Msg is packed as such:
 
 ```
-[46 bytes: header]
+[48 bytes: header]
 ==
 8 bytes: tombstone id
 32 bytes: message id (for auth and integ)
-2 bytes: reserved bytes for protocol negotiation
+4 bytes: reserved bytes for protocol negotiation
 4 bytes: precise time in ms in BE u32
 ==
 
@@ -74,6 +74,6 @@ Alg = 1 << 7, // alternate hash algorithm
 Example publish to route 53:
 
 ```
-[..][1 << 3][053][..]
+[..][1 << 3][..u16 as BE][..]
 
 ```
