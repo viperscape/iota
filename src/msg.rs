@@ -155,7 +155,8 @@ impl<'d> Msg<'d> {
             }
         }
 
-        if (precise_time_ms as u32 - msg.time()) < max_dt as u32 {
+        let dt = precise_time_ms as u32 - msg.time();
+        if (dt < max_dt as u32) && (dt >= 0) {
             same
         }
         else { false }
