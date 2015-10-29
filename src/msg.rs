@@ -1,11 +1,11 @@
 /*
 Msg is packed as such:
 
-[46 bytes: header]
+[48 bytes: header]
 ==
 8 bytes: tombstone id
 32 bytes: message id (for auth and integ)
-2 bytes: reserved bytes for protocol negotiation
+4 bytes: reserved bytes for protocol negotiation
 4 bytes: precise time in ms in BE u32
 ==
 
@@ -25,14 +25,15 @@ use byteorder::{ByteOrder, BigEndian};
 
 use ::{Client,MAX_LEN,Flags,flags};
 
+const HeaderSize: usize = 48;
 
-pub type Header = [u8;46];
+pub type Header = [u8;HeaderSize];
 trait Default {
     fn default() -> Self;
 }
 impl Default for Header {
     fn default() -> Header {
-        [0;46]
+        [0;HeaderSize]
     }
 }
 
@@ -47,7 +48,7 @@ impl<'d,'c> MsgBuilder<'d,'c> {
         }
 
         {
-            let pt = &mut h[42..46];
+            let pt = &mut h[44..48];
             BigEndian::write_u32(pt, precise_time_ms as u32);
         }
 
@@ -66,9 +67,9 @@ impl<'d,'c> MsgBuilder<'d,'c> {
         self
     }
 
-    pub fn route (mut self, rt: u8) -> MsgBuilder<'d,'c> {
-        { let f = &mut self.0[41];
-          *f = rt; }
+    pub fn route (mut self, rt: u16) -> MsgBuilder<'d,'c> {
+        {let mut nrt = &mut self.0[41..43];
+         BigEndian::write_u16(nrt, rt);}
         
         self.gen_mid();
         
@@ -76,7 +77,7 @@ impl<'d,'c> MsgBuilder<'d,'c> {
     }
 
     fn gen_mid(&mut self) {
-        let gmid = gen_mid(self.2,&self.0[40..46],&self.1[..]);
+        let gmid = gen_mid(self.2,&self.0[40..48],&self.1[..]);
        
         let mid = &mut self.0[8..40]; 
         for (i,n) in gmid[..32].iter().enumerate() {
@@ -105,13 +106,13 @@ impl<'d> Msg<'d> {
         &self.header[8..40]
     }
 
-    pub fn flags(&self) -> (Flags,u8) {
+    pub fn flags(&self) -> (Flags,u16) {
         (Flags::from_bits_truncate(self.header[40]),
-         self.header[41])
+         BigEndian::read_u16(&self.header[41..43])) //41 and 41 for route as u16
     }
 
     pub fn time(&self) -> u32 {
-        BigEndian::read_u32(&self.header[42..46])
+        BigEndian::read_u32(&self.header[44..48])
     }
     
     // TODO: create an into_bytes without vec alloc
@@ -135,16 +136,16 @@ impl<'d> Msg<'d> {
     /// expects buffer to be proper size
     pub fn from_bytes(buf: &[u8]) -> Msg {
         let mut h = Header::default();
-        for (i,n) in buf[..46].iter().enumerate() {
+        for (i,n) in buf[..48].iter().enumerate() {
             h[i] = *n;
         }
 
         Msg { header: h,
-              data: &buf[46..] }
+              data: &buf[48..] }
     }
 
     pub fn auth (client: &Client, msg: &Msg, max_dt: u16) -> bool {
-        let mid = gen_mid(client,&msg.header[40..46],&msg.data[..]);
+        let mid = gen_mid(client,&msg.header[40..48],&msg.data[..]);
         //&msg.header[8..40] == &mid[..]
         
         // prevent timing attack with full iteration of values
@@ -298,16 +299,16 @@ mod tests {
         t[40] = flags::Pub.bits(); // change back flag
 
         // test route tampering
-        t[41] = 52; //change route destination
+        t[42] = 52; //change route destination
         {let m = Msg::from_bytes(&t[..]);
          assert!(!Msg::auth(&client,&m, 150));}
-        t[41] = 53; //change back route
+        t[42] = 53; //change back route
 
         // verify data tampering
-        t[46] = 105; // change data to "ii" instead of "hi"
+        t[48] = 105; // change data to "ii" instead of "hi"
         {let m = Msg::from_bytes(&t[..]);
          assert!(!Msg::auth(&client,&m, 150));}
-        t[46] = 104; // change back data
+        t[48] = 104; // change back data
         
         // verify basic auth works
         {let m = Msg::from_bytes(&t[..]);

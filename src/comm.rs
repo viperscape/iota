@@ -26,10 +26,10 @@ pub fn listen<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H) {
             let client = Client::from_msg(&msg);
             
             if Msg::auth(&client,&msg, 150) {
-                println!("main listen auth {:?} {:?}",msg.data, msg.flags());
+                println!("dest auth {:?} {:?}",msg.data, msg.flags());
                 manage(&client,&msg,src,&mut socket, handler);
             }
-            else { println!("not auth") }
+            else { println!("dest not auth") }
         }
         
     }
@@ -49,10 +49,10 @@ pub fn send_ping<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) {
         let (msg,src) = collect_msg(&mut buf, &mut socket);
         let client = Client::from_msg(&msg);
         if Msg::auth(&client,&msg, 150) {
-            println!("ping res auth {:?} {:?}",msg.data, msg.flags());
+            println!("src ping res auth {:?} {:?}",msg.data, msg.flags());
             manage(&client,&msg,src,&mut socket,handler);
         }
-        else { println!("not auth") }
+        else { println!("src not auth") }
     }
 }
 
@@ -66,17 +66,17 @@ pub fn send_req<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) {
         let m = MsgBuilder::new(&client,&d[..]).
             flag(flags::Req).route(53).build();
         let r = socket.send_to(&m.into_vec()[..],dest);
-        println!("send req {:?}",r);
+        println!("src send req {:?}",r);
         
         socket.set_read_timeout(Some(Duration::new(2,0)));
         let mut buf = [0; MAX_LEN];
         let (msg,src) = collect_msg(&mut buf, &mut socket);
         let client = Client::from_msg(&msg);
         if Msg::auth(&client,&msg, 150) {
-            println!("res auth {:?} {:?}",msg.data, msg.flags());
+            println!("src res auth {:?} {:?}",msg.data, msg.flags());
             manage(&client,&msg,src,&mut socket,handler);
         }
-        else { println!("not auth") }
+        else { println!("src not auth") }
     }
 }
 
@@ -117,7 +117,7 @@ pub fn manage<H:Handler>
      socket: &mut UdpSocket,
      handler: &mut H) {
         let (flags,rt) = msg.flags();
-
+        
         if flags.contains(flags::Ping|flags::Req) { // send a ping reply
             ping_res(client,msg.data,src,socket);
             if flags.contains(flags::G1) { println!("guarantee unimpl"); }
@@ -144,7 +144,8 @@ pub fn manage<H:Handler>
 pub fn ping_req(client: &Client,
                 src: SocketAddrV4,
                 socket: &mut UdpSocket) {
-    let mut d = [random::<u8>()];
+    let mut d = &mut [0;4];
+    BigEndian::write_f32(d, precise_time_s() as f32);
     let m = MsgBuilder::new(client,&d[..]).
         flag(flags::Ping).flag(flags::Req).build();
     let r = socket.send_to(&m.into_vec()[..],src);
@@ -168,15 +169,15 @@ pub fn collect_msg<'d> (buf: &'d mut [u8;MAX_LEN], socket: &mut UdpSocket) -> (M
             let r = &mut buf[..amt];
             (Msg::from_bytes(r),src)
         },
-        Err(_) => { panic!("unable to collect message") },
+        Err(e) => { panic!("unable to collect message, {:?}",e) },
     }
 }
 
 
 pub trait Handler {
     fn ping(&mut self, dt: f32);
-    fn publish(&mut self, tid: u64, rt: u8, data: &[u8]);
-    fn request(&mut self, rt: u8, buf: &mut [u8]) -> usize;
+    fn publish(&mut self, tid: u64, rt: u16, data: &[u8]);
+    fn request(&mut self, rt: u16, buf: &mut [u8]) -> usize;
     fn list(&self);
     //fn batch(&mut self, tid: u64, n: u8, data: &[u8]);
     //fn new_batch(&mut self, tid: u64, rt: u8);
