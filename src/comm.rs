@@ -142,23 +142,23 @@ pub fn manage<H:Handler>
     }
 
 pub fn ping_req(client: &Client,
-                src: SocketAddrV4,
+                dest: SocketAddrV4,
                 socket: &mut UdpSocket) {
     let mut d = &mut [0;4];
     BigEndian::write_f32(d, precise_time_s() as f32);
     let m = MsgBuilder::new(client,&d[..]).
         flag(flags::Ping).flag(flags::Req).build();
-    let r = socket.send_to(&m.into_vec()[..],src);
+    let r = socket.send_to(&m.into_vec()[..],dest);
     
     println!("ping req: {:?}",r);
 }
 pub fn ping_res(client: &Client,
                 data: &[u8],
-                src: SocketAddr,
+                dest: SocketAddr,
                 socket: &mut UdpSocket) {
     let m = MsgBuilder::new(client,&data[..]).
         flag(flags::Ping).flag(flags::Res).build();
-    let r = socket.send_to(&m.into_vec()[..],src);
+    let r = socket.send_to(&m.into_vec()[..],dest);
     
     println!("ping res: {:?}",r);
 }
