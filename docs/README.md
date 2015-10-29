@@ -5,11 +5,12 @@ See header in msg.rs for layout
 Msg is packed as such:
 
 ```
-[42 bytes: header]
+[46 bytes: header]
 ==
 8 bytes: tombstone id
 32 bytes: message id (for auth and integ)
 2 bytes: reserved bytes for protocol negotiation
+4 bytes: precise time in ms in BE u32
 ==
 
 0-1.4KB: data (arbitrary max size, theoretical is natural udp limit - header)
@@ -17,14 +18,15 @@ Msg is packed as such:
 ```
 
 All packets must be authorized and checked for integrity
-Authorization: HMAC-SHA256
+Authorization suggestion: HMAC-SHA256
 
 Integrity variables (in order) [bytes 40-max_len]:
 - Flags
 - Route
+- Time
 - Message data
 
-Integrity variables are securely hashed (SHA256) and used as seed in HMAC
+Integrity variables are securely hashe and used as seed in HMAC
 
 Frames meant for negotiation must include a random byte(s) in data for security
 
@@ -41,17 +43,15 @@ Flags defined (flags.rs):
 Flags are used in 40th byte
 
 ```
-None = 0, // not currently used (perhaps an Info request)
+Cmd = 0, // commands
 Ping = 1,
 Req = 1 << 1, // request
 Res = 1 << 2, // response
 Pub = 1 << 3, // publishing to an endpoint
 G1  = 1 << 4, // guaranteed at least once
-
-// currently reserved bits for future extension
 Bat = 1 << 5, // used for batching
 Alt = 1 << 6, // alternate encoding specified
-R3 = 1 << 7,
+Alg = 1 << 7, // alternate hash algorithm
 
 ```
 		
@@ -71,7 +71,7 @@ R3 = 1 << 7,
 41st byte provides value for corresponding flag, called 'route'
 
 
-example publish to route 53:
+Example publish to route 53:
 
 ```
 [..][1 << 3][053][..]
