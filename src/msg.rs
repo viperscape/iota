@@ -223,7 +223,8 @@ mod tests {
     use crypto::mac::{Mac};
 
     use clock_ticks::{precise_time_ns,precise_time_ms};
-
+    use byteorder::{ByteOrder, BigEndian};
+    
     use ::{Msg,MsgBuilder,Client,flags};
 
     #[test]
@@ -278,6 +279,23 @@ mod tests {
         
         let m = Msg::from_bytes(&t[..]);
         assert!(Msg::auth(&client,&m, 150));
+    }
+
+    #[test]
+    fn ping_ok () {
+        use ::comm::{ping_req,ping_res};
+        let client = Client::blank();
+        let req = ping_req(&client);
+        
+        let r = Msg::from_bytes(&req[..]);
+        let it = BigEndian::read_f32(r.data);
+        
+        let res = ping_res(&client,r.data);
+        let r = Msg::from_bytes(&res[..]);
+
+        assert!(r.flags().0.contains(flags::Ping|flags::Res));
+        let ot = BigEndian::read_f32(r.data);
+        assert_eq!(it,ot);
     }
     
     #[test]
