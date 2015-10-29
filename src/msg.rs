@@ -15,6 +15,7 @@ Msg is packed as such:
 
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
+use crypto::sha1::Sha1;
 use crypto::hmac::Hmac;
 use crypto::mac::{Mac};
 
@@ -22,7 +23,7 @@ use clock_ticks::{precise_time_ms};
 
 use byteorder::{ByteOrder, BigEndian};
 
-use ::{Client,MAX_LEN,Flags};
+use ::{Client,MAX_LEN,Flags,flags};
 
 
 pub type Header = [u8;46];
@@ -75,8 +76,8 @@ impl<'d,'c> MsgBuilder<'d,'c> {
     }
 
     fn gen_mid(&mut self) {
-        //println!("{:?}",&self.0[42..46]);
         let gmid = gen_mid(self.2,&self.0[40..46],&self.1[..]);
+       
         let mid = &mut self.0[8..40]; 
         for (i,n) in gmid[..32].iter().enumerate() {
             mid[i] = *n;
@@ -149,7 +150,9 @@ impl<'d> Msg<'d> {
         // prevent timing attack with full iteration of values
         let mut same = true;
         for (i,n) in msg.header[8..40].iter().enumerate() {
-            same = (n == &mid[i]);
+            if same {
+                same = (n == &mid[i]);
+            }
         }
 
         if (precise_time_ms as u32 - msg.time()) < max_dt as u32 {
@@ -160,15 +163,28 @@ impl<'d> Msg<'d> {
 }
 
 pub fn gen_mid (client: &Client, h: &[u8], d: &[u8]) -> [u8;32] {
-    let mut sha = Sha256::new();
-    sha.input(&h[..]);
-    sha.input(&d[..]);
-    let mut hmac = Hmac::new(sha,client.key());
-    let mut mid = [0u8;32];
-    for (i,n) in hmac.result().code()[..32].iter().enumerate() {
+    let hmac = {
+        if Flags::from_bits_truncate(h[0])
+            .contains(flags::Alg) {
+                let mut sha = Sha1::new();
+                sha.input(&h[..]);
+                sha.input(&d[..]);
+                Hmac::new(sha,client.key()).result()
+            }
+        else {
+            let mut sha = Sha256::new();
+            sha.input(&h[..]);
+            sha.input(&d[..]);
+            Hmac::new(sha,client.key()).result()
+        }
+    };
+
+    
+    let mut mid = [0u8;32]; //sha1 gets padded with zero
+    for (i,n) in hmac.code()[..].iter().enumerate() {
         mid[i] = *n;
     }
-
+    
     mid
 }
 
@@ -247,6 +263,21 @@ mod tests {
         assert!(Msg::auth(&client,&m, 150));
     }
 
+    #[test]
+    fn auth_ok_alg () {
+        let client = Client::blank();
+        let m = MsgBuilder::new(&client,&b"hi"[..])
+            .flag(flags::Pub)
+            .flag(flags::Alg).route(53).build();
+        let t = m.into_vec();
+        
+        // t would be sent across wire as &t[..]
+        // on recv we would recreate a message from bytes recv
+        
+        let m = Msg::from_bytes(&t[..]);
+        assert!(Msg::auth(&client,&m, 150));
+    }
+    
     #[test]
     fn tamper_check () {
         let client = Client::blank();

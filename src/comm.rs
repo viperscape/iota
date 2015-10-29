@@ -144,9 +144,7 @@ pub fn manage<H:Handler>
 pub fn ping_req(client: &Client,
                 src: SocketAddrV4,
                 socket: &mut UdpSocket) {
-    let mut d = &mut [0u8;4];
-    BigEndian::write_f32(d, precise_time_s() as f32);
-    
+    let mut d = [random::<u8>()];
     let m = MsgBuilder::new(client,&d[..]).
         flag(flags::Ping).flag(flags::Req).build();
     let r = socket.send_to(&m.into_vec()[..],src);

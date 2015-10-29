@@ -3,16 +3,14 @@
 bitflags! {
     
     flags Flags: u8 {
-        // const None = 0, TODO: no flags needs a flag! and purpose
+        const Cmd = 0,
         const Ping = 1, // may be removed in favor of a blank req
         const Req = 1 << 1, // request
         const Res = 1 << 2, // response
         const Pub = 1 << 3, // publishing to an endpoint
         const G1  = 1 << 4, // guaranteed at least once
-
-        // currently reserved bits for future extension
         const Bat = 1 << 5, // batching
         const Alt = 1 << 6, // supply alternate encodings
-        const R3 = 1 << 7,
+        const Alg = 1 << 7, // alternate hash algorithm
     }
 }
