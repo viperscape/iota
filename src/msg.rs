@@ -364,4 +364,14 @@ mod tests {
             let mut gmac = ha.result();
         });
     }
+
+    #[bench]
+    fn auth(b:&mut Bencher) {
+        b.iter(||{auth_ok();});
+    }
+
+    #[bench]
+    fn auth_alg(b:&mut Bencher) {
+        b.iter(||{auth_ok_alg();});
+    }
 }
