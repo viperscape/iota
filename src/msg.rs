@@ -1,7 +1,7 @@
 /*
 Msg is packed as such:
 
-[42 bytes: header]
+[46 bytes: header]
 ==
 8 bytes: tombstone id
 32 bytes: message id (for auth and integ)
