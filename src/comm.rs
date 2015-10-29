@@ -42,8 +42,11 @@ pub fn send_ping<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) {
     let dest = SocketAddrV4::new(ip, port);
     if let Some(mut socket) = UdpSocket::bind(src).ok() {
         let client = Client::blank();
-        ping_req(&client,dest,&mut socket);
-
+        
+        let m = ping_req(&client);
+        let r = socket.send_to(&m[..],dest);
+        println!("ping req: {:?}",r);
+        
         socket.set_read_timeout(Some(Duration::new(1,0)));
         let mut buf = [0; MAX_LEN];
         let (msg,src) = collect_msg(&mut buf, &mut socket);
@@ -113,13 +116,15 @@ pub fn reqres<H:Handler+Send+'static+Clone>(handler:H) {
 pub fn manage<H:Handler>
     (client: &Client,
      msg: &Msg,
-     src: SocketAddr,
+     dest: SocketAddr,
      socket: &mut UdpSocket,
      handler: &mut H) {
         let (flags,rt) = msg.flags();
         
         if flags.contains(flags::Ping|flags::Req) { // send a ping reply
-            ping_res(client,msg.data,src,socket);
+            let m = ping_res(client,msg.data);
+            let r = socket.send_to(&m[..],dest);
+            println!("ping res: {:?}",r);
             if flags.contains(flags::G1) { println!("guarantee unimpl"); }
         }
         else if flags.contains(flags::Ping|flags::Res) {
@@ -133,7 +138,7 @@ pub fn manage<H:Handler>
             
             let m = MsgBuilder::new(client,&buf[..amt]).
                 flag(flags::Res).route(rt).build();
-            let r = socket.send_to(&m.into_vec()[..],src);
+            let r = socket.send_to(&m.into_vec()[..],dest);
             println!("send res {:?}",r);
         }
         else if flags == flags::Pub {
@@ -141,26 +146,22 @@ pub fn manage<H:Handler>
         }
     }
 
-pub fn ping_req(client: &Client,
-                dest: SocketAddrV4,
-                socket: &mut UdpSocket) {
+/// build ping request message
+pub fn ping_req(client: &Client,) -> Vec<u8> {
     let mut d = &mut [0;4];
     BigEndian::write_f32(d, precise_time_s() as f32);
     let m = MsgBuilder::new(client,&d[..]).
         flag(flags::Ping).flag(flags::Req).build();
-    let r = socket.send_to(&m.into_vec()[..],dest);
-    
-    println!("ping req: {:?}",r);
+
+    m.into_vec()
 }
+
+/// build ping response message
 pub fn ping_res(client: &Client,
-                data: &[u8],
-                dest: SocketAddr,
-                socket: &mut UdpSocket) {
+                data: &[u8],) -> Vec<u8> {
     let m = MsgBuilder::new(client,&data[..]).
         flag(flags::Ping).flag(flags::Res).build();
-    let r = socket.send_to(&m.into_vec()[..],dest);
-    
-    println!("ping res: {:?}",r);
+    m.into_vec()
 }
 
 pub fn collect_msg<'d> (buf: &'d mut [u8;MAX_LEN], socket: &mut UdpSocket) -> (Msg<'d>,SocketAddr) {
