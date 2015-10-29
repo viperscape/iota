@@ -2,28 +2,20 @@
 
 extern crate test;
 
+#[macro_use] extern crate bitflags;
 extern crate crypto;
 extern crate clock_ticks;
 extern crate rand;
 extern crate byteorder;
-#[macro_use] extern crate bitflags;
-
 extern crate iota;
-
-
-use self::test::Bencher;
 
 use rand::random;
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
-use crypto::sha1::Sha1;
-use crypto::md5::Md5;
-use crypto::ghash::Ghash;
 
 use crypto::hmac::Hmac;
 use crypto::mac::{Mac};
 
-use clock_ticks::{precise_time_ns,precise_time_ms};
 use byteorder::{ByteOrder, BigEndian};
 
 use iota::{Msg,MsgBuilder,Client,flags};
@@ -44,11 +36,11 @@ fn conform() {
     let mut sha = Sha256::new();
     sha.input(&p[..]);
     sha.input(&d[..]);
-    let mut hmac = Hmac::new(sha,&key[..]).result();
+    let hmac = Hmac::new(sha,&key[..]).result();
 
     let mut sha = Sha256::new();
     sha.input(&dp[..]);
-    let mut hmac2 = Hmac::new(sha,&key[..]).result();
+    let hmac2 = Hmac::new(sha,&key[..]).result();
 
     assert_eq!(hmac.code(),hmac2.code());
 }
