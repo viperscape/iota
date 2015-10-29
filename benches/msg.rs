@@ -1,4 +1,6 @@
 #![feature(test)]
+#![allow(unused_imports)]
+#![allow(unused_variables)]
 
 extern crate test;
 
@@ -37,7 +39,7 @@ fn md5(b:&mut Bencher) {
     b.iter(||{
         let mut sha = Md5::new();
         sha.input(&d[..]);
-        let mut hmac = Hmac::new(sha,&key[..]).result();
+        let hmac = Hmac::new(sha,&key[..]).result();
     });
 }
 
@@ -49,7 +51,7 @@ fn sha256(b:&mut Bencher) {
     b.iter(||{
         let mut sha = Sha256::new();
         sha.input(&d[..]);
-        let mut hmac = Hmac::new(sha,&key[..]).result();
+        let hmac = Hmac::new(sha,&key[..]).result();
     });
 }
 
@@ -61,7 +63,7 @@ fn sha1(b:&mut Bencher) {
     b.iter(||{
         let mut sha = Sha1::new();
         sha.input(&d[..]);
-        let mut hmac = Hmac::new(sha,&key[..]).result();
+        let hmac = Hmac::new(sha,&key[..]).result();
     });
 }
 
@@ -73,7 +75,7 @@ fn ghash(b:&mut Bencher) {
     b.iter(||{
         let mut ha = Ghash::new(&key);
         ha.input(&d[..]);
-        let mut gmac = ha.result();
+        let gmac = ha.result();
     });
 }
 
