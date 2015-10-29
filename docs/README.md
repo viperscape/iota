@@ -74,6 +74,6 @@ Alg = 1 << 7, // alternate hash algorithm
 Example publish to route 53:
 
 ```
-[..][1 << 3][..u16 as BE][..]
+[..][1 << 3][..53 u16 as BE][..]
 
 ```
