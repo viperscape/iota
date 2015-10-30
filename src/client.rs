@@ -48,7 +48,9 @@ impl Client {
         self.et = precise_time_ms();
     }
 
-    pub fn reset_session(&mut self) {
-        self.sess = Some(random::<u32>());
+    pub fn reset_session(&mut self) -> u32 {
+        let r = random::<u32>();
+        self.sess = Some(r);
+        r
     }
 }

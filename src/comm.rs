@@ -4,6 +4,7 @@
 use ::{Msg,MsgBuilder,Client,flags};
 
 use clock_ticks::precise_time_s;
+use clock_ticks::precise_time_ms;
 use rand::random;
 
 use byteorder::{ByteOrder, BigEndian};
@@ -14,6 +15,9 @@ use std::net::{SocketAddrV4,
                UdpSocket,
                Ipv4Addr, };
 
+use crypto::aessafe;
+use crypto::aes;
+use crypto::symmetriccipher::{BlockEncryptor, BlockDecryptor};
 
 pub const MAX_LEN: usize = 1400;
 
@@ -50,7 +54,56 @@ pub fn manage<H:Handler>
         else if flags == flags::Pub {
             handler.publish(client.tid,rt,msg.data);
         }
+        else if flags == flags::Cmd {
+            if rt == 0 { // session start
+                let sess = decrypt_sess(&client,&msg);
+                println!("session: {:?}",sess);
+            }
+        }
     }
+
+/// encrypt a session id as a new Msg
+pub fn enc_sess(client: &mut Client) -> Vec<u8> {
+    let t = precise_time_ms();
+    let mut bt = &mut [0u8;4];
+    BigEndian::write_u32(bt,t as u32);
+
+    let sess = client.reset_session();
+    let key = //client.key();
+        vec![0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
+             0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c];
+    
+    let mut esess = [0u8;16];
+    let mut tsess = &mut [0u8;16];
+    BigEndian::write_u32(tsess,sess);
+    
+    let mut enc = aessafe::AesSafe128Encryptor::new(&key);
+    enc.encrypt_block(&tsess[..], &mut esess);
+
+    let mut tmp = [0u8;16];
+    let mut dec = aessafe::AesSafe128Decryptor::new(&key);
+    dec.decrypt_block(&esess, &mut tmp);
+
+    let nsess = BigEndian::read_u32(&tmp[..]);
+
+    assert_eq!(nsess,sess);
+    
+    let mut m = MsgBuilder::new(client, &esess[..]);
+    // reset time in msg to match
+    {let mut mpt = &mut m.0[44..48];
+     BigEndian::write_u32(mpt,t as u32);}
+    
+    m.build().into_vec()
+}
+
+/// decrypt a session from msg data
+pub fn decrypt_sess(client: &Client, msg: &Msg) -> Option<u32> {
+    let t = msg.time();
+    let key = client.key();
+    let mut sess = [0u8;32];
+
+    None
+}
 
 /// build ping request message
 pub fn ping_req(client: &Client,) -> Vec<u8> {
