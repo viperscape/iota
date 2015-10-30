@@ -9,10 +9,10 @@ use ::Msg;
 
 #[derive(Debug)]
 pub struct Client {
-    // TODO: consider storing tid as [u8;8]
     pub tid: u64, //long term (tombstone) client id, never changes
     et: u64, // epoch time of initial connection
-    key: Vec<u8>, //shared key //TODO: consider [u8;8/16]
+    key: Vec<u8>, //shared key
+    pub sess: Option<u32>, //session id
 }
 
 impl Client {
@@ -21,6 +21,7 @@ impl Client {
             tid: 0,
             et: 0,
             key: vec!(),
+            sess: None,
         }
     }
 
@@ -29,6 +30,7 @@ impl Client {
             tid: msg.tid(),
             et: precise_time_ms(),
             key: vec!(),
+            sess: None,
         }
     }
 
@@ -44,5 +46,9 @@ impl Client {
 
     pub fn reset_time(&mut self) {
         self.et = precise_time_ms();
+    }
+
+    pub fn reset_session(&mut self) {
+        self.sess = Some(random::<u32>());
     }
 }
