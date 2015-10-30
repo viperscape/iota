@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+
 use clock_ticks::precise_time_ns;
 use rand::random;
 

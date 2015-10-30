@@ -13,6 +13,8 @@ Msg is packed as such:
 
  */
 
+#![allow(unused_imports)]
+
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
 use crypto::sha1::Sha1;
@@ -85,7 +87,7 @@ impl<'d,'c> MsgBuilder<'d,'c> {
         }
     }
     
-    pub fn build(mut self) -> Msg<'d> {
+    pub fn build(self) -> Msg<'d> {
         Msg { header: self.0,
               data: self.1 } 
     }
@@ -118,7 +120,7 @@ impl<'d> Msg<'d> {
     // TODO: create an into_bytes without vec alloc
     // Order of packing matters here!!
     // we will expect to unpack for the same order
-    pub fn into_vec(mut self) -> Vec<u8> {
+    pub fn into_vec(self) -> Vec<u8> {
         let mut v = self.header[..].to_vec();
         
         for n in self.data[..].iter() {
@@ -152,15 +154,18 @@ impl<'d> Msg<'d> {
         let mut same = true;
         for (i,n) in msg.header[8..40].iter().enumerate() {
             if same {
-                same = (n == &mid[i]);
+                same = n == &mid[i];
             }
         }
 
-        let dt = precise_time_ms as u32 - msg.time();
-        if (dt < max_dt as u32) && (dt >= 0) {
-            same
+        if precise_time_ms as u32 > msg.time() {
+            let dt = precise_time_ms as u32 - msg.time();
+            if dt < max_dt as u32 {
+                return same
+            }
         }
-        else { false }
+
+        false
     }
 }
 

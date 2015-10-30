@@ -1,3 +1,6 @@
+#![allow(unused_must_use)]
+#![allow(unused_variables)]
+
 use ::{Msg,MsgBuilder,Client,flags};
 
 use clock_ticks::precise_time_s;
@@ -86,7 +89,7 @@ pub fn send_req<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) {
 pub fn send_pub<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) {
     let src = SocketAddrV4::new(ip, 55265);
     let dest = SocketAddrV4::new(ip, port);
-    if let Some(mut socket) = UdpSocket::bind(src).ok() {
+    if let Some(socket) = UdpSocket::bind(src).ok() {
         let client = Client::blank();
 
         let d = [1];

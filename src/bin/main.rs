@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+
 extern crate iota;
 use iota::{Msg,Client,comm};
 
@@ -22,7 +24,7 @@ impl comm::Handler for Worker {
     }
     fn request(&mut self, rt: u16, buf: &mut [u8]) -> usize {
         if let Some(ref n) = self.0.get(&rt) {
-            buf[0] = (n.1 as u8);
+            buf[0] = n.1 as u8;
             1
         }
         else { buf[0] = 0;
