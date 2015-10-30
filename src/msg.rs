@@ -40,7 +40,7 @@ impl Default for Header {
     }
 }
 
-pub struct MsgBuilder<'d,'c>(Header,&'d [u8],&'c Client);
+pub struct MsgBuilder<'d,'c>(pub Header,&'d [u8],&'c Client);
 impl<'d,'c> MsgBuilder<'d,'c> {
     pub fn new(client: &'c Client, data: &'d [u8]) -> MsgBuilder<'d,'c> {
         let mut h = Header::default();
@@ -159,7 +159,7 @@ impl<'d> Msg<'d> {
             }
         }
 
-        if precise_time_ms as u32 > msg.time() {
+        if precise_time_ms as u32 >= msg.time() {
             let dt = precise_time_ms as u32 - msg.time();
             if dt < max_dt as u32 {
                 return same
