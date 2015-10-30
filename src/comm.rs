@@ -56,7 +56,7 @@ pub fn manage<H:Handler>
         }
         else if flags == flags::Cmd {
             if rt == 0 { // session start
-                let sess = decrypt_sess(&client,&msg);
+                let sess = dec_sess(&client,&msg);
                 println!("session: {:?}",sess);
             }
         }
@@ -65,28 +65,16 @@ pub fn manage<H:Handler>
 /// encrypt a session id as a new Msg
 pub fn enc_sess(client: &mut Client) -> Vec<u8> {
     let t = precise_time_ms();
-    let mut bt = &mut [0u8;4];
-    BigEndian::write_u32(bt,t as u32);
 
-    let sess = client.reset_session();
-    let key = //client.key();
-        vec![0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
-             0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c];
-    
     let mut esess = [0u8;16];
-    let mut tsess = &mut [0u8;16];
-    BigEndian::write_u32(tsess,sess);
-    
-    let mut enc = aessafe::AesSafe128Encryptor::new(&key);
-    enc.encrypt_block(&tsess[..], &mut esess);
+    {
+        let mut enc;
+        
+        {let key = client.key();
+         enc = aessafe::AesSafe128Encryptor::new(&key);}
 
-    let mut tmp = [0u8;16];
-    let mut dec = aessafe::AesSafe128Decryptor::new(&key);
-    dec.decrypt_block(&esess, &mut tmp);
-
-    let nsess = BigEndian::read_u32(&tmp[..]);
-
-    assert_eq!(nsess,sess);
+        enc.encrypt_block(client.session(), &mut esess);
+    }
     
     let mut m = MsgBuilder::new(client, &esess[..]);
     // reset time in msg to match
@@ -97,12 +85,15 @@ pub fn enc_sess(client: &mut Client) -> Vec<u8> {
 }
 
 /// decrypt a session from msg data
-pub fn decrypt_sess(client: &Client, msg: &Msg) -> Option<u32> {
+pub fn dec_sess(client: &Client, msg: &Msg) -> [u8;16] {
     let t = msg.time();
     let key = client.key();
-    let mut sess = [0u8;32];
+    let mut sess = [0u8;16];
+    
+    let mut dec = aessafe::AesSafe128Decryptor::new(&key);
+    dec.decrypt_block(&msg.data, &mut sess);
 
-    None
+    sess
 }
 
 /// build ping request message
