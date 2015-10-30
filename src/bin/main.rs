@@ -1,6 +1,10 @@
 #![allow(unused_imports)]
 
 extern crate iota;
+use iota::comm::{Handler,};
+
+mod net;
+
 use iota::{Msg,Client,comm};
 
 use std::time::Duration;
@@ -10,12 +14,12 @@ use std::net::{SocketAddrV4,
 use std::collections::HashMap;
     
 fn main() {
-    comm::reqres(Worker(HashMap::new()));
+    net::reqres(Worker(HashMap::new()));
 }
 
 #[derive(Clone)]
 struct Worker(HashMap<u16, (u64,bool)>); // route, state
-impl comm::Handler for Worker {
+impl Handler for Worker {
     fn ping (&mut self, dt: f32) {
         println!("dt: {:?}",dt);
     }
