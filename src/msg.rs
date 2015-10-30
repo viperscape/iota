@@ -27,6 +27,7 @@ use byteorder::{ByteOrder, BigEndian};
 
 use ::{Client,MAX_LEN,Flags,flags};
 
+#[allow(non_upper_case_globals)]
 const HeaderSize: usize = 48;
 
 pub type Header = [u8;HeaderSize];
