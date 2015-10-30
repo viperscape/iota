@@ -1,6 +1,6 @@
 #![allow(unused_imports)]
 
-use clock_ticks::precise_time_ns;
+use clock_ticks::precise_time_ms;
 use rand::random;
 
 use byteorder::{ByteOrder, BigEndian};
@@ -27,7 +27,7 @@ impl Client {
     pub fn from_msg(msg: &Msg) -> Client {
         Client {
             tid: msg.tid(),
-            et: precise_time_ns(),
+            et: precise_time_ms(),
             key: vec!(),
         }
     }
@@ -40,5 +40,9 @@ impl Client {
     
     pub fn key(&self) -> &[u8] {
         &self.key[..]
+    }
+
+    pub fn reset_time(&mut self) {
+        self.et = precise_time_ms();
     }
 }
