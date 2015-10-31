@@ -94,7 +94,6 @@ impl<'d,'c> MsgBuilder<'d,'c> {
     }
 }
 
-
 pub struct Msg<'d> {
     header: Header,
     pub data: &'d [u8],
@@ -149,6 +148,7 @@ impl<'d> Msg<'d> {
 
     pub fn auth (client: &Client, msg: &Msg, max_dt: u16) -> bool {
         let mid = gen_mid(client,&msg.header[40..48],&msg.data[..]);
+       
         //&msg.header[8..40] == &mid[..]
         
         // prevent timing attack with full iteration of values

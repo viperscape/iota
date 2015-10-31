@@ -1,5 +1,6 @@
 #![allow(unused_must_use)]
 #![allow(unused_variables)]
+#![allow(unused_imports)]
 
 use ::{Msg,MsgBuilder,Client,flags};
 
@@ -19,6 +20,12 @@ use crypto::aessafe;
 use crypto::aes;
 use crypto::symmetriccipher::{BlockEncryptor, BlockDecryptor};
 
+use crypto::digest::Digest;
+use crypto::sha2::Sha256;
+use crypto::sha1::Sha1;
+use crypto::hmac::Hmac;
+use crypto::mac::{Mac};
+
 pub const MAX_LEN: usize = 1400;
 
 
@@ -34,7 +41,6 @@ pub fn manage<H:Handler>
         if flags.contains(flags::Ping|flags::Req) { // send a ping reply
             let m = ping_res(client,msg.data);
             let r = socket.send_to(&m[..],dest);
-            println!("ping res: {:?}",r);
             if flags.contains(flags::G1) { println!("guarantee unimpl"); }
         }
         else if flags.contains(flags::Ping|flags::Res) {
@@ -54,13 +60,24 @@ pub fn manage<H:Handler>
         else if flags == flags::Pub {
             handler.publish(client.tid,rt,msg.data);
         }
-        else if flags == flags::Cmd {
+        else if flags.is_empty() {
             if rt == 0 { // session start
+                println!("new sess");
                 let sess = dec_sess(&client,&msg);
-                println!("session: {:?}",sess);
+                println!("sess:{:?}",sess);
+                
+
+                let m = MsgBuilder::new(client,&msg.mid()[..]).
+                    route(1).build();
+                let r = socket.send_to(&m.into_vec()[..],dest);
+                println!("send sess resp {:?}",r);
+            }
+            if rt == 1 { // session response, now negotiated
+                println!("sess confirm:{:?}",msg.data);
             }
         }
     }
+
 
 /// encrypt a session id as a new Msg
 pub fn enc_sess(client: &mut Client) -> Vec<u8> {
@@ -76,12 +93,12 @@ pub fn enc_sess(client: &mut Client) -> Vec<u8> {
         enc.encrypt_block(client.session(), &mut esess);
     }
     
-    let mut m = MsgBuilder::new(client, &esess[..]);
+    let mut m = MsgBuilder::new(client, &esess[..]).build();
     // reset time in msg to match
-    {let mut mpt = &mut m.0[44..48];
-     BigEndian::write_u32(mpt,t as u32);}
-    
-    m.build().into_vec()
+    //{let mut mpt = &mut m.0[44..48];
+    // BigEndian::write_u32(mpt,t as u32);}
+    println!("mid: {:?}",m.mid());
+    m.into_vec()
 }
 
 /// decrypt a session from msg data
@@ -89,8 +106,9 @@ pub fn dec_sess(client: &Client, msg: &Msg) -> [u8;16] {
     let t = msg.time();
     let key = client.key();
     let mut sess = [0u8;16];
-    
+println!("{:?}",key);
     let mut dec = aessafe::AesSafe128Decryptor::new(&key);
+    println!("dec2");
     dec.decrypt_block(&msg.data, &mut sess);
 
     sess

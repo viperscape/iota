@@ -23,8 +23,8 @@ impl Client {
         Client {
             tid: 0,
             et: 0,
-            key: Vec::with_capacity(SESS_SIZE),
-            sess: Vec::with_capacity(KEY_SIZE),
+            key: [0u8;16].to_vec(),
+            sess: [0u8;16].to_vec(),
         }
     }
 
@@ -39,6 +39,10 @@ impl Client {
 
     pub fn apply_key(&mut self, key: Vec<u8>) {
         self.key = key;
+    }
+
+    pub fn apply_sess(&mut self, sess: Vec<u8>) {
+        self.sess = sess;
     }
     
     pub fn key(&self) -> &[u8] {
