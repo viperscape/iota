@@ -42,8 +42,12 @@ impl Handler for Worker {
     }
     fn list(&self) {}
 
-    fn session(&mut self, tid: u64, sess: [u8;16]) {
+    fn set_session(&mut self, tid: u64, sess: [u8;16]) {
         self.sess.insert(tid,sess);
         println!("sessions: {:?}",self.sess);
+    }
+
+    fn get_session(&mut self, tid: u64) -> Option<&[u8;16]> {
+        self.sess.get(&tid)
     }
 }

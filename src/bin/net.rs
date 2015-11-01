@@ -137,11 +137,11 @@ pub fn reqres<H:Handler+Send+'static+Clone>(handler:H) {
     
     let ip = Ipv4Addr::new(127, 0, 0, 1);
     let port = 12345;
-    //let _s = thread::spawn(move || { listen(ip,port,&mut handler) });
+    let _s = thread::spawn(move || { listen(ip,port,&mut handler) });
     //send_ping(ip,port,&mut handler2);
     //send_pub(ip,port,&mut handler2);
     //send_req(ip,port,&mut handler2);
-    let _s = thread::spawn(move || { send_sess(ip,port,&mut handler) });
-    listen(ip,port,&mut handler2);
-    //send_sess(ip,port,&mut handler2);
+    //let _s = thread::spawn(move || { send_sess(ip,port,&mut handler) });
+    //listen(ip,port,&mut handler2);
+    send_sess(ip,port,&mut handler2);
 }
