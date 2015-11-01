@@ -19,6 +19,7 @@ use std::net::{SocketAddrV4,
                SocketAddr,
                UdpSocket,
                Ipv4Addr, };
+use std::io;
 
 const SRC_PORT: u16 = 55265;
 
@@ -47,7 +48,6 @@ pub fn listen<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H) {
 
 }
 
-use std::io;
 pub fn send_ping<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) -> Result<(),io::Error> {
     let src = SocketAddrV4::new(ip, SRC_PORT);
     let dest = SocketAddrV4::new(ip, port);
