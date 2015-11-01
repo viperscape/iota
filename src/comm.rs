@@ -84,6 +84,7 @@ pub fn manage<H:Handler>
                 handler.publish(client.tid,rt,msg.data);
             }
         }
+        else { println!("handler requires session") }
     }
 
 /// encrypt a session id as a new Msg
@@ -134,13 +135,14 @@ pub fn ping_res(client: &Client,
     m.into_vec()
 }
 
-pub fn collect_msg<'d> (buf: &'d mut [u8;MAX_LEN], socket: &mut UdpSocket) -> (Msg<'d>,SocketAddr) {
+use std::io;
+pub fn collect_msg<'d> (buf: &'d mut [u8;MAX_LEN], socket: &mut UdpSocket) -> Result<(Msg<'d>,SocketAddr),io::Error> {
     match socket.recv_from(buf) {
         Ok((amt, src)) => {
             let r = &mut buf[..amt];
-            (Msg::from_bytes(r),src)
+            Ok((Msg::from_bytes(r),src))
         },
-        Err(e) => { panic!("unable to collect message, {:?}",e) },
+        Err(e) => { Err(e) },
     }
 }
 
