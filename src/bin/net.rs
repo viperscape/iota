@@ -5,7 +5,7 @@ extern crate clock_ticks;
 extern crate rand;
 extern crate byteorder;
 
-use iota::{Msg,MsgBuilder,Client,flags,MAX_LEN};
+use iota::{Msg,MsgBuilder,Client,flags,MAX_DATA};
 use iota::comm::{Handler,collect_msg,manage,ping_req,ping_resp};
 use iota::comm;
 
@@ -28,7 +28,7 @@ pub fn listen<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H) {
     let src = SocketAddrV4::new(ip, port);
     if let Some(mut socket) = UdpSocket::bind(src).ok() {
         socket.set_read_timeout(Some(Duration::new(2,0)));
-        let mut buf = [0; MAX_LEN];
+        let mut buf = [0; MAX_DATA];
         
         loop {
             if let Some((msg,src)) = collect_msg(&mut buf, &mut socket).ok() {
@@ -59,7 +59,7 @@ pub fn send_ping<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) -> Result<()
         println!("ping req: {:?}",r);
         
         socket.set_read_timeout(Some(Duration::new(1,0)));
-        let mut buf = [0; MAX_LEN];
+        let mut buf = [0; MAX_DATA];
 
         if let Some((msg,src)) = collect_msg(&mut buf, &mut socket).ok() {
             let client = Client::from_msg(&msg);
@@ -87,7 +87,7 @@ pub fn send_req<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) {
         println!("src send req {:?}",r);
         
         socket.set_read_timeout(Some(Duration::new(2,0)));
-        let mut buf = [0; MAX_LEN];
+        let mut buf = [0; MAX_DATA];
 
         if let Some((msg,src)) = collect_msg(&mut buf, &mut socket).ok() {
             let client = Client::from_msg(&msg);
@@ -127,7 +127,7 @@ pub fn send_sess<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H) {
         println!("send sess {:?}",r);
 
         socket.set_read_timeout(Some(Duration::new(2,0)));
-        let mut buf = [0; MAX_LEN];
+        let mut buf = [0; MAX_DATA];
 
         if let Some((msg,src)) = collect_msg(&mut buf, &mut socket).ok() {
             let client = Client::from_msg(&msg);

@@ -13,5 +13,5 @@ pub mod flags;
 
 pub use msg::{Msg,MsgBuilder};
 pub use client::Client;
-pub use comm::MAX_LEN;
+pub use comm::MAX_DATA;
 pub use flags::Flags;

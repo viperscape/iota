@@ -25,7 +25,7 @@ use clock_ticks::{precise_time_ms};
 
 use byteorder::{ByteOrder, BigEndian};
 
-use ::{Client,MAX_LEN,Flags,flags};
+use ::{Client,MAX_DATA,Flags,flags};
 
 #[allow(non_upper_case_globals)]
 const HeaderSize: usize = 48;

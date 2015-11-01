@@ -26,7 +26,7 @@ use crypto::sha1::Sha1;
 use crypto::hmac::Hmac;
 use crypto::mac::{Mac};
 
-pub const MAX_LEN: usize = 1400;
+pub const MAX_DATA: usize = 1400;
 
 
 /// command handler for flags
@@ -71,7 +71,7 @@ pub fn manage<H:Handler>
                 handler.ping(precise_time_s() as f32 - d);
             }
             else if flags == flags::Req { //FIXME: should probably use intersect
-                let mut buf = [0u8;MAX_LEN];
+                let mut buf = [0u8;MAX_DATA];
                 let amt = handler.request(rt,&mut buf);
                 println!("req buf {:?}",buf[0]);
                 
@@ -136,7 +136,7 @@ pub fn ping_resp(client: &Client,
 }
 
 use std::io;
-pub fn collect_msg<'d> (buf: &'d mut [u8;MAX_LEN], socket: &mut UdpSocket) -> Result<(Msg<'d>,SocketAddr),io::Error> {
+pub fn collect_msg<'d> (buf: &'d mut [u8;MAX_DATA], socket: &mut UdpSocket) -> Result<(Msg<'d>,SocketAddr),io::Error> {
     match socket.recv_from(buf) {
         Ok((amt, src)) => {
             let r = &mut buf[..amt];
