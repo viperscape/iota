@@ -6,7 +6,7 @@ extern crate rand;
 extern crate byteorder;
 
 use iota::{Msg,MsgBuilder,Client,flags,MAX_LEN};
-use iota::comm::{Handler,collect_msg,manage,ping_req,ping_res};
+use iota::comm::{Handler,collect_msg,manage,ping_req,ping_resp};
 use iota::comm;
 
 use self::clock_ticks::precise_time_s;

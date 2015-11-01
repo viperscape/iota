@@ -62,7 +62,7 @@ pub fn manage<H:Handler>
         }
         else if has_sess {
             if flags.contains(flags::Ping|flags::Req) { // send a ping reply
-                let m = ping_res(client,msg.data);
+                let m = ping_resp(client,msg.data);
                 let r = socket.send_to(&m[..],dest);
                 if flags.contains(flags::G1) { println!("guarantee unimpl"); }
             }
@@ -128,8 +128,8 @@ pub fn ping_req(client: &Client,) -> Vec<u8> {
 }
 
 /// build ping response message
-pub fn ping_res(client: &Client,
-                data: &[u8],) -> Vec<u8> {
+pub fn ping_resp(client: &Client,
+                 data: &[u8],) -> Vec<u8> {
     let m = MsgBuilder::new(client,&data[..]).
         flag(flags::Ping).flag(flags::Res).build();
     m.into_vec()
