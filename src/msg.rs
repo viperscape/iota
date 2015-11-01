@@ -117,7 +117,6 @@ impl<'d> Msg<'d> {
         BigEndian::read_u32(&self.header[44..48])
     }
     
-    // TODO: create an into_bytes without vec alloc
     // Order of packing matters here!!
     // we will expect to unpack for the same order
     pub fn into_vec(self) -> Vec<u8> {
@@ -130,10 +129,23 @@ impl<'d> Msg<'d> {
         v
     }
 
-   /* pub fn as_bytes(&self) -> &[u8] {
-        &self.header[..],
-        &self.data[..]
-    }*/
+    /// write to existing buffer, returns length written
+    pub fn into_buf(self, buf: &mut [u8]) -> usize {
+        let hlen = self.header.len();
+        let dlen = self.data.len();
+
+        if buf.len() < hlen+dlen { return 0 }
+        
+        for (i,n) in self.header[..].iter().enumerate() {
+            buf[i] = *n;
+        }
+
+        for (i,n) in self.data[..].iter().enumerate() {
+            buf[i+hlen-1] = *n;
+        }
+
+        hlen + dlen
+    }
     
     /// expects buffer to be proper size
     pub fn from_bytes(buf: &[u8]) -> Msg {
