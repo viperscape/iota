@@ -62,11 +62,10 @@ pub fn manage<H:Handler>
         }
         else if flags.is_empty() {
             if rt == 0 { // session start
-                println!("new sess");
                 let sess = dec_sess(&client,&msg);
-                println!("sess:{:?}",sess);
-                
 
+                handler.session(client.tid,sess);
+                
                 let m = MsgBuilder::new(client,&msg.mid()[..]).
                     route(1).build();
                 let r = socket.send_to(&m.into_vec()[..],dest);
@@ -74,6 +73,7 @@ pub fn manage<H:Handler>
             }
             if rt == 1 { // session response, now negotiated
                 println!("sess confirm:{:?}",msg.data);
+                //handler.session(client.tid,sess);
             }
         }
     }
@@ -94,10 +94,6 @@ pub fn enc_sess(client: &mut Client) -> Vec<u8> {
     }
     
     let mut m = MsgBuilder::new(client, &esess[..]).build();
-    // reset time in msg to match
-    //{let mut mpt = &mut m.0[44..48];
-    // BigEndian::write_u32(mpt,t as u32);}
-    println!("mid: {:?}",m.mid());
     m.into_vec()
 }
 
@@ -106,9 +102,8 @@ pub fn dec_sess(client: &Client, msg: &Msg) -> [u8;16] {
     let t = msg.time();
     let key = client.key();
     let mut sess = [0u8;16];
-println!("{:?}",key);
+    
     let mut dec = aessafe::AesSafe128Decryptor::new(&key);
-    println!("dec2");
     dec.decrypt_block(&msg.data, &mut sess);
 
     sess
@@ -147,6 +142,8 @@ pub trait Handler {
     fn ping(&mut self, dt: f32);
     fn publish(&mut self, tid: u64, rt: u16, data: &[u8]);
     fn request(&mut self, rt: u16, buf: &mut [u8]) -> usize;
+    fn session(&mut self, tid: u64, sess: [u8;16]);
+    
     fn list(&self);
     //fn batch(&mut self, tid: u64, n: u8, data: &[u8]);
     //fn new_batch(&mut self, tid: u64, rt: u8);

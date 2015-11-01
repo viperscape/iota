@@ -14,20 +14,26 @@ use std::net::{SocketAddrV4,
 use std::collections::HashMap;
     
 fn main() {
-    net::reqres(Worker(HashMap::new()));
+    net::reqres(Worker {
+        state: HashMap::new(),
+        sess: HashMap::new(),
+    });
 }
 
 #[derive(Clone)]
-struct Worker(HashMap<u16, (u64,bool)>); // route, state
+struct Worker {
+    state: HashMap<u16, (u64,bool)>, // route, state
+    sess: HashMap<u64, [u8;16]>, //tid, session
+}
 impl Handler for Worker {
     fn ping (&mut self, dt: f32) {
         println!("dt: {:?}",dt);
     }
     fn publish(&mut self, tid: u64, rt: u16, data: &[u8]) {
-        self.0.insert(rt, (tid,data[0] == 1));
+        self.state.insert(rt, (tid,data[0] == 1));
     }
     fn request(&mut self, rt: u16, buf: &mut [u8]) -> usize {
-        if let Some(ref n) = self.0.get(&rt) {
+        if let Some(ref n) = self.state.get(&rt) {
             buf[0] = n.1 as u8;
             1
         }
@@ -35,4 +41,9 @@ impl Handler for Worker {
                1 }
     }
     fn list(&self) {}
+
+    fn session(&mut self, tid: u64, sess: [u8;16]) {
+        self.sess.insert(tid,sess);
+        println!("sessions: {:?}",self.sess);
+    }
 }
