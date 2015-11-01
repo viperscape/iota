@@ -7,15 +7,12 @@ use byteorder::{ByteOrder, BigEndian};
 
 use ::Msg;
 
-pub const SESS_SIZE: usize = 16;
-pub const KEY_SIZE: usize = 16;
-
 #[derive(Debug)]
 pub struct Client {
     pub tid: u64, //long term (tombstone) client id, never changes
     et: u64, // epoch time of initial connection
-    key: Vec<u8>, //shared key
-    sess: Vec<u8>, //session id
+    key: [u8;16], //shared key
+    sess: [u8;16], //session id
 }
 
 impl Client {
@@ -23,8 +20,8 @@ impl Client {
         Client {
             tid: 0,
             et: 0,
-            key: [0u8;16].to_vec(),
-            sess: [0u8;16].to_vec(),
+            key: [0u8;16],
+            sess: [0u8;16],
         }
     }
 
@@ -32,34 +29,34 @@ impl Client {
         Client {
             tid: msg.tid(),
             et: precise_time_ms(),
-            key: Vec::with_capacity(SESS_SIZE),
-            sess: Vec::with_capacity(KEY_SIZE),
+            key: [0u8;16],
+            sess: [0u8;16],
         }
     }
 
-    pub fn apply_key(&mut self, key: Vec<u8>) {
+    pub fn apply_key(&mut self, key: [u8;16]) {
         self.key = key;
     }
 
-    pub fn apply_sess(&mut self, sess: Vec<u8>) {
+    pub fn apply_sess(&mut self, sess: [u8;16]) {
         self.sess = sess;
     }
     
-    pub fn key(&self) -> &[u8] {
-        &self.key[..]
+    pub fn key(&self) -> &[u8;16] {
+        &self.key
     }
 
-    pub fn session(&self) -> &[u8] {
-        &self.sess[..]
+    pub fn session(&self) -> &[u8;16] {
+        &self.sess
     }
 
     pub fn reset_time(&mut self) {
         self.et = precise_time_ms();
     }
 
-    pub fn reset_session(&mut self) -> &[u8] {
-        self.sess = [random::<u8>();SESS_SIZE].to_vec();
+    pub fn reset_session(&mut self) -> &[u8;16] {
+        self.sess = [random::<u8>();16];
 
-        &self.sess[..]
+        &self.sess
     }
 }

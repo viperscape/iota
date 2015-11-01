@@ -112,6 +112,7 @@ pub fn send_sess<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H) {
         let mut client = Client::blank();
 
         let m = comm::enc_sess(&mut client);
+        handler.set_session(client.tid,client.session().clone());
 
         let r = socket.send_to(&m[..],dest);
         println!("send sess {:?}",r);

@@ -45,13 +45,19 @@ pub fn manage<H:Handler>
 
                 handler.set_session(client.tid,sess);
                 
-                let m = MsgBuilder::new(client,&msg.mid()[..]).
+                let m = MsgBuilder::new(client,&msg.data[..]).
                     route(1).build();
                 let r = socket.send_to(&m.into_vec()[..],dest);
                 println!("send sess resp {:?}",r);
             }
             if rt == 1 { // session response, now negotiated
-                // this should move out to a sess-auth fn for src/client side
+                if let Some(sess_req) = handler.get_session(client.tid) {
+                    let sess_resp = dec_sess(&client,&msg);
+
+                    if *sess_req != sess_resp { println!("session invalid!"); }
+                    else { println!("session valid"); }
+                }
+                else { println!("sess not set!"); }
             }
         }
         else if has_sess {
@@ -80,7 +86,6 @@ pub fn manage<H:Handler>
         }
     }
 
-
 /// encrypt a session id as a new Msg
 pub fn enc_sess(client: &mut Client) -> Vec<u8> {
     let t = precise_time_ms();
@@ -90,7 +95,7 @@ pub fn enc_sess(client: &mut Client) -> Vec<u8> {
         let mut enc;
         
         {let key = client.key();
-         enc = aessafe::AesSafe128Encryptor::new(&key);}
+         enc = aessafe::AesSafe128Encryptor::new(&key[..]);}
 
         enc.encrypt_block(client.session(), &mut esess);
     }
@@ -105,7 +110,7 @@ pub fn dec_sess(client: &Client, msg: &Msg) -> [u8;16] {
     let key = client.key();
     let mut sess = [0u8;16];
     
-    let mut dec = aessafe::AesSafe128Decryptor::new(&key);
+    let mut dec = aessafe::AesSafe128Decryptor::new(&key[..]);
     dec.decrypt_block(&msg.data, &mut sess);
 
     sess
@@ -139,7 +144,6 @@ pub fn collect_msg<'d> (buf: &'d mut [u8;MAX_LEN], socket: &mut UdpSocket) -> (M
     }
 }
 
-
 pub trait Handler {
     fn ping(&mut self, dt: f32);
     fn publish(&mut self, tid: u64, rt: u16, data: &[u8]);
@@ -147,7 +151,7 @@ pub trait Handler {
     fn set_session(&mut self, tid: u64, sess: [u8;16]);
     fn get_session(&mut self, tid: u64) -> Option<&[u8;16]>;
     
-    fn list(&self);
+    //fn list(&self);
     //fn batch(&mut self, tid: u64, n: u8, data: &[u8]);
     //fn new_batch(&mut self, tid: u64, rt: u8);
 }

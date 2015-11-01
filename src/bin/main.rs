@@ -40,11 +40,9 @@ impl Handler for Worker {
         else { buf[0] = 0;
                1 }
     }
-    fn list(&self) {}
-
+    
     fn set_session(&mut self, tid: u64, sess: [u8;16]) {
         self.sess.insert(tid,sess);
-        println!("sessions: {:?}",self.sess);
     }
 
     fn get_session(&mut self, tid: u64) -> Option<&[u8;16]> {
