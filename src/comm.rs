@@ -66,7 +66,7 @@ pub fn manage<H:Handler>
                 let r = socket.send_to(&m[..],dest);
                 if flags.contains(flags::G1) { println!("guarantee unimpl"); }
             }
-            else if flags.contains(flags::Ping|flags::Res) {
+            else if flags.contains(flags::Ping|flags::Resp) {
                 let d = BigEndian::read_f32(msg.data);
                 handler.ping(precise_time_s() as f32 - d);
             }
@@ -76,7 +76,7 @@ pub fn manage<H:Handler>
                 println!("req buf {:?}",buf[0]);
                 
                 let m = MsgBuilder::new(client,&buf[..amt]).
-                    flag(flags::Res).route(rt).build();
+                    flag(flags::Resp).route(rt).build();
                 let r = socket.send_to(&m.into_vec()[..],dest);
                 println!("send res {:?}",r);
             }
@@ -131,7 +131,7 @@ pub fn ping_req(client: &Client,) -> Vec<u8> {
 pub fn ping_resp(client: &Client,
                  data: &[u8],) -> Vec<u8> {
     let m = MsgBuilder::new(client,&data[..]).
-        flag(flags::Ping).flag(flags::Res).build();
+        flag(flags::Ping).flag(flags::Resp).build();
     m.into_vec()
 }
 

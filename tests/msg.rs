@@ -86,7 +86,7 @@ fn ping_ok () {
     let res = ping_resp(&client,r.data);
     let r = Msg::from_bytes(&res[..]);
 
-    assert!(r.flags().0.contains(flags::Ping|flags::Res));
+    assert!(r.flags().0.contains(flags::Ping|flags::Resp));
     let ot = BigEndian::read_f32(r.data);
     assert_eq!(it,ot);
 }

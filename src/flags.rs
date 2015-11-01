@@ -6,7 +6,7 @@ bitflags! {
         const Cmd = 0,
         const Ping = 1, // may be removed in favor of a blank req
         const Req = 1 << 1, // request
-        const Res = 1 << 2, // response
+        const Resp = 1 << 2, // response
         const Pub = 1 << 3, // publishing to an endpoint
         const G1  = 1 << 4, // guaranteed at least once
         const Bat = 1 << 5, // batching
