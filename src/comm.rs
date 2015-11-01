@@ -93,7 +93,7 @@ pub fn enc_sess(client: &mut Client) -> Vec<u8> {
 
     let mut esess = [0u8;16];
     {
-        let mut enc;
+        let enc;
         
         {let key = client.key();
          enc = aessafe::AesSafe128Encryptor::new(&key[..]);}
@@ -101,7 +101,7 @@ pub fn enc_sess(client: &mut Client) -> Vec<u8> {
         enc.encrypt_block(client.session(), &mut esess);
     }
     
-    let mut m = MsgBuilder::new(client, &esess[..]).build();
+    let m = MsgBuilder::new(client, &esess[..]).build();
     m.into_vec()
 }
 
@@ -111,7 +111,7 @@ pub fn dec_sess(client: &Client, msg: &Msg) -> [u8;16] {
     let key = client.key();
     let mut sess = [0u8;16];
     
-    let mut dec = aessafe::AesSafe128Decryptor::new(&key[..]);
+    let dec = aessafe::AesSafe128Decryptor::new(&key[..]);
     dec.decrypt_block(&msg.data, &mut sess);
 
     sess

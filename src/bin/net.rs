@@ -32,7 +32,7 @@ pub fn listen<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H) {
         
         loop {
             if let Some((msg,src)) = collect_msg(&mut buf, &mut socket).ok() {
-                let mut client = Client::blank();
+                let client = Client::blank();
                 
                 if Msg::auth(&client,&msg, 150) {
                     println!("dest auth {:?} {:?}",msg.data, msg.flags());
