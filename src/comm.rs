@@ -27,7 +27,7 @@ use crypto::hmac::Hmac;
 use crypto::mac::{Mac};
 
 pub const MAX_DATA: usize = 1400;
-
+pub const MAX_LEN: usize = MAX_DATA + ::msg::HeaderSize;
 
 /// command handler for flags
 pub fn manage<H:Handler>

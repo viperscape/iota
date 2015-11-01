@@ -28,7 +28,7 @@ use byteorder::{ByteOrder, BigEndian};
 use ::{Client,MAX_DATA,Flags,flags};
 
 #[allow(non_upper_case_globals)]
-const HeaderSize: usize = 48;
+pub const HeaderSize: usize = 48;
 
 pub type Header = [u8;HeaderSize];
 trait Default {
