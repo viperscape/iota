@@ -22,7 +22,7 @@ loop {
 
 #### guarantee ####
 
-- src md5 hash of data to be guaranteed
+- src: store mid to be checked against on response from dest
 - G1 req with route sent to endpoint (g1 | req | rt, route/u16) + data
-- G1 response to src (g1 | res) + md5 hash of data recv
-- confirm: src checks hash matches
+- G1 response to src (g1 | resp) + data (mid from g1-req)
+- src: confirm mids match

@@ -60,7 +60,7 @@ Alg = 1 << 7, // alternate hash algorithm
 - Guaranteed(1): Basic guarantee(of at least once)
 
 
-Bytes 41 and 41 provide value for corresponding flag, called 'route'
+Bytes 41 and 42 provide value for corresponding flag, called 'route'
 
 
 Example publish to route 53:
