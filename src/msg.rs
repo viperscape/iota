@@ -184,18 +184,29 @@ impl<'d> Msg<'d> {
 
 pub fn gen_mid (client: &Client, h: &[u8], d: &[u8]) -> [u8;32] {
     let hmac = {
-        if Flags::from_bits_truncate(h[0])
-            .contains(flags::Alg) {
+        let flags = Flags::from_bits_truncate(h[0]);
+        if flags.contains(flags::Alg) {
                 let mut sha = Sha1::new();
                 sha.input(&h[..]);
                 sha.input(&d[..]);
-                Hmac::new(sha,client.key()).result()
+                Hmac::new(sha,client.session()).result()
             }
         else {
             let mut sha = Sha256::new();
             sha.input(&h[..]);
             sha.input(&d[..]);
-            Hmac::new(sha,client.key()).result()
+            let key = {
+                if flags.is_empty() { //session starting
+                    client.key()
+                }
+                else {
+                    // NOTE: no current verification that session exists
+                    // TODO: probably wrap client.sess in Option
+                    
+                    client.session()
+                }
+            };
+            Hmac::new(sha,key).result()
         }
     };
 
