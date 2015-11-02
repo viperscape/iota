@@ -38,6 +38,7 @@ pub fn manage<H:Handler>
      handler: &mut H) {
         let (flags,rt) = msg.flags();
         let has_sess = handler.get_session(client.tid).is_some();
+        let mut send_buf = [0u8;MAX_LEN];
         
         if flags.is_empty() { //cmd handling
             if rt == 0 { // session start
@@ -63,9 +64,8 @@ pub fn manage<H:Handler>
                 if flags.contains(flags::Ping) { // send a ping reply
                     let m = ping_resp(client,msg.data);
                     let r = socket.send_to(&m[..],dest);
-                    if flags.contains(flags::G1) { println!("guarantee unimpl"); }
                 }
-                else if flags == flags::Req { //FIXME: should probably use intersect
+                else {
                     let mut buf = [0u8;MAX_DATA];
                     let amt = handler.request(rt,&mut buf);
 
@@ -85,7 +85,17 @@ pub fn manage<H:Handler>
             else if flags == flags::Pub {
                 handler.publish(client.tid,rt,msg.data);
 
-                if flags.contains(flags::G1) { println!("guarantee unimpl"); }
+                if flags.contains(flags::G1) {
+                    println!("guarantee unimpl");
+                    let d = [1];
+                    let m = MsgBuilder::new(client,&d[..]).
+                        flag(flags::Resp).
+                        flag(flags::Pub).
+                        route(rt).build();
+                    socket.send_to(&m.into_vec()[..],
+                                   dest);
+                    
+                }
             }
         }
         else { println!("handler requires session") }
