@@ -39,7 +39,7 @@ pub fn manage<H:Handler>
         let (flags,rt) = msg.flags();
         let has_sess = handler.get_session(client.tid).is_some();
         
-        if flags.is_empty() {
+        if flags.is_empty() { //cmd handling
             if rt == 0 { // session start
                 let sess = dec_sess(&client,&msg);
 
@@ -48,39 +48,44 @@ pub fn manage<H:Handler>
                 let m = MsgBuilder::new(client,&msg.data[..]).
                     route(1).build();
                 let r = socket.send_to(&m.into_vec()[..],dest);
-                println!("send sess resp {:?}",r);
             }
             if rt == 1 { // session response, now negotiated
                 if let Some(sess_req) = handler.get_session(client.tid) {
                     let sess_resp = dec_sess(&client,&msg);
 
                     if *sess_req != sess_resp { println!("session invalid!"); }
-                    else { println!("session valid"); }
                 }
                 else { println!("sess not set!"); }
             }
         }
         else if has_sess {
-            if flags.contains(flags::Ping|flags::Req) { // send a ping reply
-                let m = ping_resp(client,msg.data);
-                let r = socket.send_to(&m[..],dest);
-                if flags.contains(flags::G1) { println!("guarantee unimpl"); }
-            }
-            else if flags.contains(flags::Ping|flags::Resp) {
-                let d = BigEndian::read_f32(msg.data);
-                handler.ping(precise_time_s() as f32 - d);
-            }
-            else if flags == flags::Req { //FIXME: should probably use intersect
-                let mut buf = [0u8;MAX_DATA];
-                let amt = handler.request(rt,&mut buf);
+            if flags.contains(flags::Req) {
+                if flags.contains(flags::Ping) { // send a ping reply
+                    let m = ping_resp(client,msg.data);
+                    let r = socket.send_to(&m[..],dest);
+                    if flags.contains(flags::G1) { println!("guarantee unimpl"); }
+                }
+                else if flags == flags::Req { //FIXME: should probably use intersect
+                    let mut buf = [0u8;MAX_DATA];
+                    let amt = handler.request(rt,&mut buf);
 
-                let m = MsgBuilder::new(client,&buf[..amt]).
-                    flag(flags::Resp).route(rt).build();
-                let r = socket.send_to(&m.into_vec()[..],dest);
-                println!("send res {:?}",r);
+                    let m = MsgBuilder::new(client,&buf[..amt]).
+                        flag(flags::Resp).route(rt).build();
+                    socket.send_to(&m.into_vec()[..],dest);
+
+                    if flags.contains(flags::G1) { println!("guarantee unimpl"); }
+                }
+            }
+            else if flags.contains(flags::Resp) {
+                if flags.contains(flags::Ping) {
+                    let d = BigEndian::read_f32(msg.data);
+                    handler.ping(precise_time_s() as f32 - d);
+                }
             }
             else if flags == flags::Pub {
                 handler.publish(client.tid,rt,msg.data);
+
+                if flags.contains(flags::G1) { println!("guarantee unimpl"); }
             }
         }
         else { println!("handler requires session") }
