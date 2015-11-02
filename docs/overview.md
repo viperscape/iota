@@ -28,12 +28,6 @@ Integrity variables (in order) [bytes 40-max_len]:
 
 Integrity variables are securely hashe and used as seed in HMAC
 
-Frames meant for negotiation must include a random byte(s) in data for security
-
-Negotiation frames requiring random data:
-- Bare Request
-- Guarantee confirmations
-- Batch confirmations
 
 ---
 
@@ -57,18 +51,16 @@ Alg = 1 << 7, // alternate hash algorithm
 		
 - Ping: Includes the request response model with no data attached (must be authorized)
 
-- Request: Requests an endpoint, if no endpoint (b0) is specified then an endpoint listing should be provided (see CoAP spec). Endpoint is specified in following byte, by byte value
+- Request: Requests an endpoint's state. Endpoint is specified in following bytes as u16 in BE format.
 
-- Response: The endpoint state, or listing all endpoints
+- Response: The endpoint's state
 
-- Publish: Publishes to an endpoint
+- Publish: Publishes state to an endpoint
 
 - Guaranteed(1): Basic guarantee(of at least once)
 
-3 reserved bits: Currently only one might be in use for batching (more on this later)
 
-
-41st byte provides value for corresponding flag, called 'route'
+Bytes 41 and 41 provide value for corresponding flag, called 'route'
 
 
 Example publish to route 53:
