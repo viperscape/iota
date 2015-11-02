@@ -73,8 +73,7 @@ pub fn manage<H:Handler>
             else if flags == flags::Req { //FIXME: should probably use intersect
                 let mut buf = [0u8;MAX_DATA];
                 let amt = handler.request(rt,&mut buf);
-                println!("req buf {:?}",buf[0]);
-                
+
                 let m = MsgBuilder::new(client,&buf[..amt]).
                     flag(flags::Resp).route(rt).build();
                 let r = socket.send_to(&m.into_vec()[..],dest);

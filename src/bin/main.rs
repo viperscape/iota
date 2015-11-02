@@ -37,8 +37,7 @@ impl Handler for Worker {
             buf[0] = n.1 as u8;
             1
         }
-        else { buf[0] = 0;
-               1 }
+        else { 0 } // no state to return
     }
     
     fn set_session(&mut self, tid: u64, sess: [u8;16]) {

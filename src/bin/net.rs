@@ -155,6 +155,9 @@ pub fn reqres<H:Handler+Send+'static+Clone>(handler:H) {
         send_sess(ip,port,&mut handler);
 
         send_ping(ip,port,&mut handler);
+
+        send_req(ip,port,&mut handler);
+        
         send_pub(ip,port,&mut handler);
         send_req(ip,port,&mut handler);
     });
