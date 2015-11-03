@@ -15,6 +15,7 @@ use std::net::{SocketAddrV4,
                SocketAddr,
                UdpSocket,
                Ipv4Addr, };
+use std::collections::{HashMap,HashSet};
 
 use crypto::aessafe;
 use crypto::aes;
@@ -65,15 +66,13 @@ pub fn manage<H:Handler>
                     let m = ping_resp(client,msg.data);
                     let r = socket.send_to(&m[..],dest);
                 }
-                else {
+                else { //standard req, send endpoint status
                     let mut buf = [0u8;MAX_DATA];
                     let amt = handler.request(rt,&mut buf);
 
                     let m = MsgBuilder::new(client,&buf[..amt]).
                         flag(flags::Resp).route(rt).build();
                     socket.send_to(&m.into_vec()[..],dest);
-
-                    if flags.contains(flags::G1) { println!("guarantee unimpl"); }
                 }
             }
             else if flags.contains(flags::Resp) {
@@ -81,13 +80,18 @@ pub fn manage<H:Handler>
                     let d = BigEndian::read_f32(msg.data);
                     handler.ping(precise_time_s() as f32 - d);
                 }
+                else if flags.contains(flags::Pub) {
+                    //G1 resp/ack on publish
+                    // we match the mid to determine success
+                    // if g1.store.get(&msg.mid()).is_some() {}
+                }
             }
             else if flags == flags::Pub {
                 handler.publish(client.tid,rt,msg.data);
 
                 if flags.contains(flags::G1) {
                     println!("guarantee unimpl");
-                    let d = [1];
+                    let d = msg.mid();
                     let m = MsgBuilder::new(client,&d[..]).
                         flag(flags::Resp).
                         flag(flags::Pub).
@@ -170,4 +174,9 @@ pub trait Handler {
     //fn list(&self);
     //fn batch(&mut self, tid: u64, n: u8, data: &[u8]);
     //fn new_batch(&mut self, tid: u64, rt: u8);
+}
+
+pub struct HandlerStore {
+    g1: HashSet<u8>,
+    batch: HashMap<u8,u8>,
 }
