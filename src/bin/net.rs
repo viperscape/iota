@@ -114,6 +114,19 @@ pub fn send_pub<H:Handler>(ip: Ipv4Addr, port: u16, _handler:&mut H, store: &mut
     }
 }
 
+pub fn send_pub_g1<H:Handler>(ip: Ipv4Addr, port: u16, _handler:&mut H, store: &mut Store) {
+    let src = SocketAddrV4::new(ip, SRC_PORT);
+    let dest = SocketAddrV4::new(ip, port);
+    if let Some(socket) = UdpSocket::bind(src).ok() {
+        let client = Client::blank();
+
+        let d = [1];
+        let m = comm::pub_g1(&client,&d[..],115,store);
+        let r = socket.send_to(&m[..],dest);
+        println!("send pub g1 {:?}",r);
+    }
+}
+
 pub fn send_sess<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H, store: &mut Store) {
     let src = SocketAddrV4::new(ip, SRC_PORT);
     let dest = SocketAddrV4::new(ip, port);
@@ -163,6 +176,8 @@ pub fn reqres<H:Handler+Send+'static+Clone>(handler:H) {
         
         send_pub(ip,port,&mut handler, &mut store);
         send_req(ip,port,&mut handler, &mut store);
+
+        send_pub_g1(ip,port,&mut handler, &mut store);
     });
     
     listen(ip,port,&mut handler2, &mut store_dest);

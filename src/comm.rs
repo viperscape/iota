@@ -108,6 +108,19 @@ pub fn manage<H:Handler>
         else { println!("handler requires session") }
     }
 
+pub fn pub_g1 (client: &Client,
+                      data: &[u8],
+                      rt: u16,
+                      store: &mut Store) -> Vec<u8> {
+    let m = MsgBuilder::new(&client,&data[..]).
+        flag(flags::Pub).route(rt).build();
+
+    let mid = ::msg::collect_u8_32(&m.mid()[..]);
+    let m = m.into_vec();
+    store.g1.insert(mid,m.clone());
+    m
+}
+
 /// encrypt a session id as a new Msg
 pub fn enc_sess(client: &mut Client) -> Vec<u8> {
     let t = precise_time_ms();
@@ -181,7 +194,7 @@ pub trait Handler {
 
 //#[derive(Clone)]
 pub struct Store<'d> {
-    g1: HashMap<[u8;32],Msg<'d>>,
+    g1: HashMap<[u8;32],Vec<u8>>,
     batch: HashMap<u8,&'d [u8]>,
 }
 impl<'d> Store<'d> {
