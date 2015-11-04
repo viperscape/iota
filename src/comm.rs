@@ -36,7 +36,8 @@ pub fn manage<H:Handler>
      msg: &Msg,
      dest: SocketAddr,
      socket: &mut UdpSocket,
-     handler: &mut H) {
+     handler: &mut H,
+     store: &mut Store) {
         let (flags,rt) = msg.flags();
         let has_sess = handler.get_session(client.tid).is_some();
         let mut send_buf = [0u8;MAX_LEN];
@@ -83,7 +84,9 @@ pub fn manage<H:Handler>
                 else if flags.contains(flags::Pub) {
                     //G1 resp/ack on publish
                     // we match the mid to determine success
-                    // if g1.store.get(&msg.mid()).is_some() {}
+                    if store.g1.remove(&msg.mid()[..]).is_some() {
+                        println!("removed g1");
+                    }
                 }
             }
             else if flags == flags::Pub {
@@ -176,7 +179,16 @@ pub trait Handler {
     //fn new_batch(&mut self, tid: u64, rt: u8);
 }
 
-pub struct HandlerStore {
-    g1: HashSet<u8>,
-    batch: HashMap<u8,u8>,
+//#[derive(Clone)]
+pub struct Store<'d> {
+    g1: HashMap<[u8;32],Msg<'d>>,
+    batch: HashMap<u8,&'d [u8]>,
+}
+impl<'d> Store<'d> {
+    pub fn new() -> Store<'d> {
+        Store {
+            g1: HashMap::new(),
+            batch: HashMap::new(),
+        }
+    }
 }

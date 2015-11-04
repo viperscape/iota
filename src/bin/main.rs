@@ -1,7 +1,7 @@
 #![allow(unused_imports)]
 
 extern crate iota;
-use iota::comm::{Handler,};
+use iota::comm::{Handler,Store};
 
 mod net;
 

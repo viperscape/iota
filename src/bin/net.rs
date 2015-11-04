@@ -6,7 +6,7 @@ extern crate rand;
 extern crate byteorder;
 
 use iota::{Msg,MsgBuilder,Client,flags,MAX_DATA};
-use iota::comm::{Handler,collect_msg,manage,ping_req,ping_resp};
+use iota::comm::{Handler,Store,collect_msg,manage,ping_req,ping_resp};
 use iota::comm;
 
 use self::clock_ticks::precise_time_s;
@@ -23,7 +23,7 @@ use std::io;
 
 const SRC_PORT: u16 = 55265;
 
-pub fn listen<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H) {
+pub fn listen<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H, store: &mut Store) {
     
     let src = SocketAddrV4::new(ip, port);
     if let Some(mut socket) = UdpSocket::bind(src).ok() {
@@ -36,7 +36,7 @@ pub fn listen<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H) {
                 
                 if Msg::auth(&client,&msg, 150) {
                     println!("dest auth {:?} {:?}",msg.data, msg.flags());
-                    manage(&client,&msg,src,&mut socket, handler);
+                    manage(&client,&msg,src,&mut socket, handler,store);
                 }
                 else { println!("dest not auth") }
             }
@@ -48,7 +48,7 @@ pub fn listen<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H) {
 
 }
 
-pub fn send_ping<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) -> Result<(),io::Error> {
+pub fn send_ping<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H, store: &mut Store) -> Result<(),io::Error> {
     let src = SocketAddrV4::new(ip, SRC_PORT);
     let dest = SocketAddrV4::new(ip, port);
     if let Some(mut socket) = UdpSocket::bind(src).ok() {
@@ -65,7 +65,7 @@ pub fn send_ping<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) -> Result<()
             let client = Client::from_msg(&msg);
             if Msg::auth(&client,&msg, 150) {
                 println!("src ping res auth {:?} {:?}",msg.data, msg.flags());
-                manage(&client,&msg,src,&mut socket,handler);
+                manage(&client,&msg,src,&mut socket,handler,store);
             }
             else { println!("src not auth") }
         }
@@ -74,7 +74,7 @@ pub fn send_ping<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) -> Result<()
     Ok(())
 }
 
-pub fn send_req<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) {
+pub fn send_req<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H, store: &mut Store) {
     let src = SocketAddrV4::new(ip, SRC_PORT);
     let dest = SocketAddrV4::new(ip, port);
     if let Some(mut socket) = UdpSocket::bind(src).ok() {
@@ -93,14 +93,14 @@ pub fn send_req<H:Handler>(ip: Ipv4Addr, port: u16,handler:&mut H) {
             let client = Client::from_msg(&msg);
             if Msg::auth(&client,&msg, 150) {
                 println!("src res auth {:?} {:?}",msg.data, msg.flags());
-                manage(&client,&msg,src,&mut socket,handler);
+                manage(&client,&msg,src,&mut socket,handler,store);
             }
             else { println!("src not auth") }
         }
     }
 }
 
-pub fn send_pub<H:Handler>(ip: Ipv4Addr, port: u16, _handler:&mut H) {
+pub fn send_pub<H:Handler>(ip: Ipv4Addr, port: u16, _handler:&mut H, store: &mut Store) {
     let src = SocketAddrV4::new(ip, SRC_PORT);
     let dest = SocketAddrV4::new(ip, port);
     if let Some(socket) = UdpSocket::bind(src).ok() {
@@ -114,7 +114,7 @@ pub fn send_pub<H:Handler>(ip: Ipv4Addr, port: u16, _handler:&mut H) {
     }
 }
 
-pub fn send_sess<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H) {
+pub fn send_sess<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H, store: &mut Store) {
     let src = SocketAddrV4::new(ip, SRC_PORT);
     let dest = SocketAddrV4::new(ip, port);
     if let Some(mut socket) = UdpSocket::bind(src).ok() {
@@ -133,7 +133,7 @@ pub fn send_sess<H:Handler>(ip: Ipv4Addr, port: u16, handler:&mut H) {
             let client = Client::from_msg(&msg);
             if Msg::auth(&client,&msg, 150) {
                 println!("src res auth {:?} {:?}",msg.data, msg.flags());
-                manage(&client,&msg,src,&mut socket,handler);
+                manage(&client,&msg,src,&mut socket,handler,store);
             }
             else { println!("src not auth") }
         }
@@ -150,17 +150,20 @@ pub fn reqres<H:Handler+Send+'static+Clone>(handler:H) {
     let ip = Ipv4Addr::new(127, 0, 0, 1);
     let port = 12345;
 
+    let mut store = Store::new();
+    let mut store_dest = Store::new();
+
     thread::spawn(move || {
-        send_ping(ip,port,&mut handler);
-        send_sess(ip,port,&mut handler);
+        send_ping(ip,port,&mut handler, &mut store);
+        send_sess(ip,port,&mut handler, &mut store);
 
-        send_ping(ip,port,&mut handler);
+        send_ping(ip,port,&mut handler, &mut store);
 
-        send_req(ip,port,&mut handler);
+        send_req(ip,port,&mut handler, &mut store);
         
-        send_pub(ip,port,&mut handler);
-        send_req(ip,port,&mut handler);
+        send_pub(ip,port,&mut handler, &mut store);
+        send_req(ip,port,&mut handler, &mut store);
     });
     
-    listen(ip,port,&mut handler2);
+    listen(ip,port,&mut handler2, &mut store_dest);
 }
